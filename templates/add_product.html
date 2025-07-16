@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main-wrapper">
+    <h2>Add Product</h2>
+    <form method="post">
+        <label>Name:</label>
+        <input type="text" name="name" required><br>
+        <label>Price:</label>
+        <input type="number" name="price" step="0.01" required><br>
+        <label>Stock:</label>
+        <input type="number" name="stock" required><br>
+        <label>Description:</label>
+        <textarea name="description" required></textarea><br>
+        <label>Image URL:</label>
+        <input type="text" name="image" required><br>
+        <button class="btn" type="submit">Add Product</button>
+    </form>
+</div>
+{% endblock %}

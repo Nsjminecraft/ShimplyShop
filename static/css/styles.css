@@ -1,8 +1,3 @@
-/*
-  Colors: http://getuicolors.com
-*/
-
-/* Setup */
 :root {
   --black: #000000;
   --almost-black: #263238;
@@ -33,7 +28,6 @@ body {
   background: var(--grey-light);
 }
 
-/* Typography */
 .center {
   text-align: center;
 }
@@ -56,7 +50,6 @@ p {
   margin: 24px 0;
 }
 
-/* Cards */
 .card-wrapper {
   margin: 0 auto;
   padding: 90px 30px;
@@ -88,7 +81,6 @@ p {
   }
 }
 
-/* Forms */
 form {
   transition: opacity .15s ease;
 }
@@ -139,7 +131,6 @@ label {
   display: none;
 }
 
-/* Buttons */
 .btn {
   margin: 0 0 24px;
   padding: 11px 30px 10px;
@@ -175,4 +166,293 @@ label {
 input[type=submit] {
   margin: 34px auto 24px;
   display: block;
+}
+
+.main-wrapper {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 32px 24px;
+  background: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+}
+
+.search-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 8px;
+}
+.search-input {
+  width: 350px;
+  padding: 10px 14px;
+  border: 1px solid var(--grey);
+  border-radius: 4px 0 0 4px;
+  font-size: 16px;
+  outline: none;
+  background: var(--almost-white);
+}
+.search-btn {
+  border-radius: 0 4px 4px 0;
+  padding: 10px 22px;
+  font-size: 16px;
+}
+
+.section-title {
+  display: flex;
+  margin: 32px 0 16px 8px;
+  font-size: 22px;
+  color: var(--primary-dark);
+  font-weight: 600;
+  justify-content: center;
+}
+
+.categories {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+.category-card {
+  background: var(--almost-white);
+  border-radius: 8px;
+  padding: 12px 18px 8px 18px;
+  width: 130px;
+  text-align: center;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  border: 1px solid var(--grey-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.category-card:hover {
+  box-shadow: 0 4px 16px rgba(30,136,229,0.10);
+  border-color: var(--primary);
+}
+.category-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 10px;
+  background: var(--grey-light);
+}
+.category-card span {
+  font-size: 15px;
+  color: var(--grey-dark);
+  font-weight: 500;
+}
+
+.products {
+  display: flex;
+  gap: 32px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.product-card {
+  background: var(--almost-white);
+  border-radius: 8px;
+  padding: 20px 16px 24px 16px;
+  width: 220px;
+  text-align: center;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  border: 1px solid var(--grey);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.product-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  background: var(--grey-light);
+}
+.product-card h3 {
+  font-size: 18px;
+  color: var(--almost-black);
+  margin: 12px 0 8px 0;
+}
+.product-card p {
+  font-size: 16px;
+  color: var(--primary-dark);
+  margin: 0 0 12px 0;
+}
+
+/* Header Styles */
+.main-header {
+  width: 100%;
+  background: var(--white);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 70px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  height: 38px;
+  width: 38px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--grey-light);
+}
+
+.company-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  letter-spacing: 1px;
+}
+
+.header-search-bar {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 500px;
+  margin: 0 32px;
+}
+
+.header-search-bar .btn {
+  margin: 0;
+  height: 44px;
+  font-size: 16px;
+  padding: 0 22px;
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  align-items: center;
+}
+.header-search-bar .search-input {
+  height: 44px;
+  border-radius: 4px 0 0 4px;
+  margin: 0;
+  font-size: 16px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropbtn {
+  background: var(--primary);
+  color: var(--white);
+  padding: 10px 22px;
+  font-size: 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.dropbtn:hover {
+  background: var(--primary-dark);
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background: var(--white);
+  min-width: 150px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-radius: 6px;
+  z-index: 1;
+  margin-top: 8px;
+}
+
+.dropdown-content a {
+  color: var(--almost-black);
+  padding: 12px 18px;
+  text-decoration: none;
+  display: block;
+  border-bottom: 1px solid var(--grey-light);
+  font-size: 15px;
+  transition: background 0.12s;
+}
+
+.dropdown-content a:last-child {
+  border-bottom: none;
+}
+
+.dropdown-content a:hover {
+  background: var(--grey-light);
+}
+
+.dropdown:hover .dropdown-content,
+.dropdown:focus-within .dropdown-content,
+.dropdown-content:hover {
+  display: block;
+}
+
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+}
+.cart-table th, .cart-table td {
+  border: 1px solid var(--grey-light);
+  padding: 10px 8px;
+  text-align: left;
+}
+.cart-table th {
+  background: var(--almost-white);
+}
+.cart-table img {
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+@media only screen and (max-width: 900px) {
+  .products, .categories {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .main-wrapper {
+    padding: 16px 4px;
+  }
+  .search-input {
+    width: 100%;
+    min-width: 0;
+  }
+  .main-header {
+    flex-direction: column;
+    height: auto;
+    padding: 12px 8px;
+    gap: 10px;
+  }
+  .header-search-bar {
+    margin: 10px 0;
+    width: 100%;
+    max-width: 100%;
+  }
+  .header-search-bar .search-input {
+    width: 100%;
+    min-width: 0;
+  }
 }

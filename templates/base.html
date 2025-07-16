@@ -8,13 +8,32 @@
     <title>User Login System</title>
 </head>
 <body>
+    <header class="main-header">
+        <div class="header-left">
+            <img src="/static/img/logo.png" alt="Commers Logo" class="logo">
+            <a href="/main" class="storenameheader">Commers</a>
+        </div>
+        <form class="header-search-bar" action="#" method="get">
+            <input type="text" placeholder="Search products, categories..." class="search-input">
+            <button class="btn search-btn" type="submit">Search</button>
+        </form>
+        <div class="header-right">
+            <div class="dropdown">
+                <button class="dropbtn">Account &#x25BC;</button>
+                <div class="dropdown-content">
+                    <a href="/cart">Cart</a>
+                    <a href="/dashboard/">Account</a>
+                    <a href="/user/signout">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    {% block content%}
-        {# Template insterted here #}
+    {% block content %}
+        {# Template inserted here #}
     {% endblock %}
 
     <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-
 </body>
 </html>

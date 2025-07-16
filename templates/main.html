@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="main-wrapper">
+
+    <h2 class="section-title">Shop by Category</h2>
+    <div class="categories">
+        <div class="category-card">
+            <img src="/static/img/cat-fashion.jpg" alt="Fashion">
+            <span>Fashion</span>
+        </div>
+        <div class="category-card">
+            <img src="/static/img/cat-electronics.jpg" alt="Electronics">
+            <span>Electronics</span>
+        </div>
+        <div class="category-card">
+            <img src="/static/img/cat-home.jpg" alt="Home & Kitchen">
+            <span>Home & Kitchen</span>
+        </div>
+        <div class="category-card">
+            <img src="/static/img/cat-beauty.jpg" alt="Beauty">
+            <span>Beauty</span>
+        </div>
+        <div class="category-card">
+            <img src="/static/img/cat-sports.jpg" alt="Sports">
+            <span>Sports</span>
+        </div>
+    </div>
+
+    <h2 class="section-title">Trending Products</h2>
+    <div class="products">
+        {% for product in products %}
+        <div class="product-card">
+            <a href="{{ url_for('product_detail', product_id=product['_id']) }}">
+                <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
+                <h3>{{ product['name'] }}</h3>
+            </a>
+            <p>${{ "%.2f"|format(product['price']) }}</p>
+            <form action="{{ url_for('add_to_cart', product_id=product['_id']) }}" method="post" style="margin:0;">
+                <button class="btn" type="submit">Add to Cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

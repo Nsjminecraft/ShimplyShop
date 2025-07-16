@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main-wrapper">
+    <h2>Your Cart</h2>
+    {% if products %}
+    <table class="cart-table">
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Subtotal</th>
+            <th></th>
+        </tr>
+        {% for product in products %}
+        <tr>
+            <td>
+                <img src="{{ product['image'] }}" alt="{{ product['name'] }}" style="height:40px;width:40px;vertical-align:middle;">
+                {{ product['name'] }}
+            </td>
+            <td>{{ product['qty'] }}</td>
+            <td>${{ "%.2f"|format(product['price']) }}</td>
+            <td>${{ "%.2f"|format(product['subtotal']) }}</td>
+            <td>
+                <form action="{{ url_for('remove_from_cart', product_id=product['_id']) }}" method="post" style="margin:0;">
+                    <button class="btn btn--secondary" type="submit">Remove</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="3" style="text-align:right;"><strong>Total:</strong></td>
+            <td colspan="2"><strong>${{ "%.2f"|format(total) }}</strong></td>
+        </tr>
+    </table>
+    {% else %}
+    <p>Your cart is empty.</p>
+    {% endif %}
+</div>
+{% endblock %}
