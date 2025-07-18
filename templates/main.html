@@ -5,26 +5,12 @@
 
     <h2 class="section-title">Shop by Category</h2>
     <div class="categories">
+        {% for category in categories %}
         <div class="category-card">
-            <img src="/static/img/cat-fashion.jpg" alt="Fashion">
-            <span>Fashion</span>
+            <img src="/static/img/cat-{{ category.name|lower|replace(' ', '-') }}.jpg" alt="{{ category.name }}">
+            <span>{{ category.name }}</span>
         </div>
-        <div class="category-card">
-            <img src="/static/img/cat-electronics.jpg" alt="Electronics">
-            <span>Electronics</span>
-        </div>
-        <div class="category-card">
-            <img src="/static/img/cat-home.jpg" alt="Home & Kitchen">
-            <span>Home & Kitchen</span>
-        </div>
-        <div class="category-card">
-            <img src="/static/img/cat-beauty.jpg" alt="Beauty">
-            <span>Beauty</span>
-        </div>
-        <div class="category-card">
-            <img src="/static/img/cat-sports.jpg" alt="Sports">
-            <span>Sports</span>
-        </div>
+        {% endfor %}
     </div>
 
     <h2 class="section-title">Trending Products</h2>

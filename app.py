@@ -24,16 +24,17 @@ def login_required(f):
 # Routes
 from user import routes
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def home():
-    return render_template('home.html')
+    return render_template('home.html', signup_error=None, login_error=None)
 
 @app.route('/dashboard/')
 @login_required
 def dashboard():
     return render_template('dashboard.html')
 
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 

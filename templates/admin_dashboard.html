@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Admin Dashboard</h1>
+
+<h2>Products</h2>
+<a href="{{ url_for('add_product') }}">Add New Product</a>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Stock</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Actions</th>
+    </tr>
+    {% for product in products %}
+    <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.price }}</td>
+        <td>{{ product.stock }}</td>
+        <td>{{ product.description }}</td>
+        <td>{{ product.category if product.category else 'None' }}</td>
+        <td>
+            <form action="{{ url_for('remove_product', product_id=product._id) }}" method="post" style="display:inline;">
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Categories</h2>
+<form action="{{ url_for('add_category') }}" method="post">
+    <input type="text" name="category_name" placeholder="New Category" required>
+    <button type="submit">Add Category</button>
+</form>
+<ul>
+    {% for category in categories %}
+    <li>
+        {{ category.name }}
+        <form action="{{ url_for('remove_category', category_id=category._id) }}" method="post" style="display:inline;">
+            <button type="submit">Remove</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %} 

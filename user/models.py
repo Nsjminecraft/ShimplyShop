@@ -12,7 +12,7 @@ class User:
         return jsonify(user), 200
 
 
-    def signup(self):
+    def signup(self, server_render=False):
         print(request.form)
 
         #Create the user object
@@ -28,11 +28,16 @@ class User:
 
         #check if the user already exists
         if db.users.find_one({"email": user['email']}):
+            if server_render:
+                return {"error": "Email address already exists"}
             return jsonify({"error": "Email address already exists"}), 400
 
         if db.users.insert_one(user):
-            return self.start_session(user)
+            self.start_session(user)
+            return None if server_render else (jsonify(user), 200)
     
+        if server_render:
+            return {"error": "Signup Failed"}
         return jsonify({"error": "Signup Failed"}), 400
     
     def signout(self):
@@ -40,12 +45,14 @@ class User:
         return redirect('/')
     
 
-    def login(self):
+    def login(self, server_render=False):
         user= db.users.find_one({
             "email": request.form.get('email')
         })
-
-        if user and pbkdf2_sha256.verify(request.form.get('password'), user['password']):
-            return self.start_session(user)
-        
+        password = request.form.get('password')
+        if user and password is not None and pbkdf2_sha256.verify(password, user['password']):
+            self.start_session(user)
+            return None if server_render else (jsonify(user), 200)
+        if server_render:
+            return {"error": "Invalid email or password"}
         return jsonify({"error": "Invalid email or password"}), 401

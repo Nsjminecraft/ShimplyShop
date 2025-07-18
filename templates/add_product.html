@@ -13,6 +13,13 @@
         <textarea name="description" required></textarea><br>
         <label>Image URL:</label>
         <input type="text" name="image" required><br>
+        <label>Category:</label>
+        <select name="category">
+            <option value="">None</option>
+            {% for category in categories %}
+                <option value="{{ category.name }}">{{ category.name }}</option>
+            {% endfor %}
+        </select><br>
         <button class="btn" type="submit">Add Product</button>
     </form>
 </div>
