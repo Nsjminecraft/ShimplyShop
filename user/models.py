@@ -42,7 +42,7 @@ class User:
     
     def signout(self):
         session.clear()
-        return redirect('/signuporlogin')
+        return redirect('/')
     
 
     def login(self, server_render=False):
