@@ -14,8 +14,8 @@
         <label>Image URL:</label>
         <input type="text" name="image" required><br>
         <label>Category:</label>
-        <select name="category">
-            <option value="">None</option>
+        <select name="category" required>
+            <option value="" disabled selected>Select a category</option>
             {% for category in categories %}
                 <option value="{{ category.name }}">{{ category.name }}</option>
             {% endfor %}

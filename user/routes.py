@@ -80,6 +80,12 @@ def update_cart(product_id):
 @app.route('/admin/add_product', methods=['GET','POST'])
 def add_product():
     if request.method == 'POST':
+        category = request.form.get('category')
+        if not category:
+            flash('Category is required.')
+            categories = list(db.categories.find())
+            # Re-render form with error
+            return render_template('add_product.html', categories=categories)
         product = {
             "_id": uuid.uuid4().hex,
             "name": request.form['name'],
@@ -87,7 +93,7 @@ def add_product():
             "stock": int(request.form['stock']),
             "description": request.form['description'],
             "image": request.form['image'],  # store image URL or filename
-            "category": request.form.get('category')
+            "category": category
         }
         db.products.insert_one(product)
         return redirect(url_for('main'))
@@ -110,7 +116,16 @@ def admin_dashboard():
     if not is_admin():
         flash('Admin access required.')
         return redirect(url_for('main'))
-    products = list(db.products.find())
+    q = request.args.get('q', '').strip()
+    if q:
+        products = list(db.products.find({
+            "$or": [
+                {"name": {"$regex": q, "$options": "i"}},
+                {"description": {"$regex": q, "$options": "i"}}
+            ]
+        }))
+    else:
+        products = list(db.products.find())
     categories = list(db.categories.find()) if hasattr(db, 'categories') else []
     return render_template('admin_dashboard.html', products=products, categories=categories)
 
