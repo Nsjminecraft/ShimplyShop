@@ -11,7 +11,7 @@ def signup():
     user_model = User()
     result = user_model.signup(server_render=True)
     if isinstance(result, dict) and result.get('error'):
-        return render_template('signuporlogin.html', signup_error=result['error'], login_error=None)
+        return render_template('signup.html', signup_error=result['error'], login_error=None)
     return redirect('/main')
 
 @app.route('/user/signout')
@@ -24,7 +24,7 @@ def login():
     user_model = User()
     result = user_model.login(server_render=True)
     if isinstance(result, dict) and result.get('error'):
-        return render_template('signuporlogin.html', signup_error=None, login_error=result['error'])
+        return render_template('login.html', signup_error=None, login_error=result['error'])
     return redirect('/main')
 
 

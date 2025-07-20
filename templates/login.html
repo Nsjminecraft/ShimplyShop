@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card-wrapper">
+        <div class="card">
+
+            <h1 class="center">Login</h1>
+
+            <form name="login_form" method="post" action="/user/login">
+
+                <label for="email">Email</label>
+                <input type="text" name="email" class="field" required> 
+
+                <label for="password">Password</label>
+                <input type="password" name="password" class="field" required>
+
+                {% if login_error %}
+                <p class="error">{{ login_error }}</p>
+                {% endif %}
+
+                <input type="submit" value="login" class="btn">
+
+            </form>
+
+        </div>
+
+</div>
+{% endblock %}

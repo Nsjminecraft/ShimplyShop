@@ -25,7 +25,7 @@ def login_required(f):
 from user import routes
 
 @app.route('/', methods=['GET'])
-def home():
+def landing():
     return render_template('landing.html')
 
 @app.route('/dashboard/')
@@ -33,9 +33,14 @@ def home():
 def dashboard():
     return render_template('dashboard.html')
 
-@app.route('/signuporlogin', methods=['GET'])
-def signuporlogin():
-    return render_template('signuporlogin.html', signup_error=None, login_error=None)
+@app.route('/signup', methods=['GET'])
+def signup_page():
+    return render_template('signup.html', signup_error=None, login_error=None)
+
+@app.route('/login', methods=['GET'])
+def login_page():
+    return render_template('login.html', signup_error=None, login_error=None)
+
 
 
 if __name__ == "__main__":
