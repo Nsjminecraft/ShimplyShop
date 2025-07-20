@@ -13,6 +13,7 @@
             <img src="/static/img/logo.png" alt="Commers Logo" class="logo">
             <a href="/main" class="storenameheader">Commers</a>
         </div>
+        {% if not (request.endpoint in ['signuporlogin', 'landing']) %}
         <form class="header-search-bar" action="#" method="get">
             <input type="text" placeholder="Search products, categories..." class="search-input">
             <button class="btn search-btn" type="submit">Search</button>
@@ -27,6 +28,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </header>
 
     {% block content %}

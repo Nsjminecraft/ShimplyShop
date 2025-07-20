@@ -26,12 +26,16 @@ from user import routes
 
 @app.route('/', methods=['GET'])
 def home():
-    return render_template('home.html', signup_error=None, login_error=None)
+    return render_template('landing.html')
 
 @app.route('/dashboard/')
 @login_required
 def dashboard():
     return render_template('dashboard.html')
+
+@app.route('/signuporlogin', methods=['GET'])
+def signuporlogin():
+    return render_template('signuporlogin.html', signup_error=None, login_error=None)
 
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ def signup():
     user_model = User()
     result = user_model.signup(server_render=True)
     if isinstance(result, dict) and result.get('error'):
-        return render_template('home.html', signup_error=result['error'], login_error=None)
-    return redirect('/dashboard/')
+        return render_template('signuporlogin.html', signup_error=result['error'], login_error=None)
+    return redirect('/main')
 
 @app.route('/user/signout')
 def signout():
@@ -24,8 +24,8 @@ def login():
     user_model = User()
     result = user_model.login(server_render=True)
     if isinstance(result, dict) and result.get('error'):
-        return render_template('home.html', signup_error=None, login_error=result['error'])
-    return redirect('/dashboard/')
+        return render_template('signuporlogin.html', signup_error=None, login_error=result['error'])
+    return redirect('/main')
 
 
 @app.route('/main')
@@ -61,6 +61,20 @@ def remove_from_cart(product_id):
     if product_id in cart:
         del cart[product_id]
         session['cart'] = cart
+    return redirect(url_for('cart'))
+
+@app.route('/update_cart/<product_id>', methods=['POST'])
+def update_cart(product_id):
+    cart = session.get('cart', {})
+    try:
+        qty = int(request.form['qty'])
+        if qty > 0:
+            cart[product_id] = qty
+        else:
+            cart.pop(product_id, None)  # Remove if qty is set to 0 or less
+        session['cart'] = cart
+    except (ValueError, KeyError):
+        pass  # Optionally flash an error message
     return redirect(url_for('cart'))
 
 @app.route('/admin/add_product', methods=['GET','POST'])

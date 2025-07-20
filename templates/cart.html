@@ -17,7 +17,12 @@
                 <img src="{{ product['image'] }}" alt="{{ product['name'] }}" style="height:40px;width:40px;vertical-align:middle;">
                 {{ product['name'] }}
             </td>
-            <td>{{ product['qty'] }}</td>
+            <td>
+                <form action="{{ url_for('update_cart', product_id=product['_id']) }}" method="post" style="display:inline;">
+                    <input type="number" name="qty" value="{{ product['qty'] }}" min="1" style="width: 50px;">
+                    <button type="submit">Update</button>
+                </form>
+            </td>
             <td>${{ "%.2f"|format(product['price']) }}</td>
             <td>${{ "%.2f"|format(product['subtotal']) }}</td>
             <td>
