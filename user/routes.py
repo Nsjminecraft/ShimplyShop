@@ -161,3 +161,20 @@ def remove_category(category_id):
     except Exception:
         db.categories.delete_one({'_id': category_id})
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return redirect(url_for('main'))
+    # Search products by name or description (case-insensitive)
+    products = list(db.products.find({
+        "$or": [
+            {"name": {"$regex": query, "$options": "i"}},
+            {"description": {"$regex": query, "$options": "i"}}
+        ]
+    }))
+    categories = list(db.categories.find({
+        "name": {"$regex": query, "$options": "i"}
+    }))
+    return render_template('search_results.html', products=products, categories=categories, query=query)

@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="text-align:center; margin-top: 60px;">
-    <h1>Welcome to Shri Commerce!</h1>
-    <p>Your one-stop shop for all your needs.</p>
-    <div style="margin-top: 40px;">
-        <a href="/login" class="btn" style="margin-right: 20px;">Login</a>
-        <a href="/signup" class="btn">Sign Up</a>
+<div class="landing-hero">
+    <div class="landing-content">
+        <h1 class="landing-title">Welcome to Commers!</h1>
+        <p class="landing-subtitle">
+            Discover and order delicious snacks, sweets, and traditional treats delivered to your doorstep.
+        </p>
+        <div class="landing-actions">
+            <a href="/login" class="btn landing-btn">Login</a>
+            <a href="/signup" class="btn btn--secondary landing-btn">Sign Up</a>
+        </div>
     </div>
 </div>
 {% endblock %} 

@@ -1,17 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="hero">
-    <h1 class="textheroh1">Delicious Snacks Delivered</h1>
-    <p>Fresh Indian snacks, sweets, and traditional treats delivered to your doorstep worldwide.</p>
-    <form class="header-search-bar" action="/search" method="get">
-        <input type="text" name="q" placeholder="Search for snacks..." class="search-input">
-        <button class="search-btn" type="submit">Search</button>
-    </form>
-</div>
+<div class="main-wrapper">
+    <h2 class="section-title">Search Results for "{{ query }}"</h2>
 
-<div class="main-wrapper" style="background:transparent; box-shadow:none; padding:0;">
-    <h2 class="section-title">Shop by Category</h2>
+    {% if categories %}
+    <h3>Categories</h3>
     <div class="categories">
         {% for category in categories %}
         <div class="category-card">
@@ -20,8 +14,10 @@
         </div>
         {% endfor %}
     </div>
+    {% endif %}
 
-    <h2 class="section-title">Trending Now</h2>
+    {% if products %}
+    <h3>Products</h3>
     <div class="products">
         {% for product in products %}
         <div class="product-card">
@@ -36,5 +32,10 @@
         </div>
         {% endfor %}
     </div>
+    {% endif %}
+
+    {% if not products and not categories %}
+    <p>No results found.</p>
+    {% endif %}
 </div>
 {% endblock %}

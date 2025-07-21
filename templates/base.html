@@ -14,20 +14,20 @@
             <a href="/main" class="storenameheader">Commers</a>
         </div>
         {% if not (request.endpoint in ['signup_page', 'landing', 'login_page']) %}
-        <form class="header-search-bar" action="#" method="get">
-            <input type="text" placeholder="Search products, categories..." class="search-input">
-            <button class="btn search-btn" type="submit">Search</button>
-        </form>
-        <div class="header-right">
-            <div class="dropdown">
-                <button class="dropbtn">Account &#x25BC;</button>
-                <div class="dropdown-content">
-                    <a href="/cart">Cart</a>
-                    <a href="/dashboard/">Account</a>
-                    <a href="/user/signout">Logout</a>
+            <form class="header-search-bar" action="/search" method="get">
+                <input type="text" name="q" placeholder="Search products, categories..." class="search-input">
+                <button class="btn search-btn" type="submit">Search</button>
+            </form>
+            <div class="header-right">
+                <div class="dropdown">
+                    <button class="dropbtn">Account &#x25BC;</button>
+                    <div class="dropdown-content">
+                        <a href="/cart">Cart</a>
+                        <a href="/dashboard/">Account</a>
+                        <a href="/user/signout">Logout</a>
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
     </header>
 
