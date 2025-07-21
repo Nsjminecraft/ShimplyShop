@@ -3,6 +3,8 @@
 A simple e-commerce web app built with Flask, MongoDB, and Passlib.  
 Users can sign up, log in, browse products, add items to their cart, and log out. Passwords are securely hashed.
 
+I KNOW IT SAYS RUPPES BUT I LIVE IN CANADA DONT WORRY ABOUT IT
+
 ## Features
 
 - User registration (sign up)
