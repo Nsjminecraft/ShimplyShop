@@ -3,6 +3,7 @@ from app import app, db
 from user.models import User
 import uuid
 from bson import ObjectId
+import re
 
 
 @app.route('/user/signup', methods=['POST'])
@@ -178,3 +179,21 @@ def search():
         "name": {"$regex": query, "$options": "i"}
     }))
     return render_template('search_results.html', products=products, categories=categories, query=query)
+
+@app.route('/category/<category_name>')
+def category_page(category_name):
+    # Normalize category name for matching (case-insensitive, spaces/dashes)
+    def normalize(name):
+        return re.sub(r'[-\s]+', '-', name.strip().lower())
+    # Find the category by normalized name
+    categories = list(db.categories.find())
+    selected_category = None
+    for cat in categories:
+        if normalize(cat['name']) == category_name:
+            selected_category = cat
+            break
+    if not selected_category:
+        return "Category not found", 404
+    # Find products in this category
+    products = list(db.products.find({"category": selected_category['name']}))
+    return render_template('category.html', category=selected_category, products=products, categories=categories)
