@@ -19,7 +19,9 @@
                 <button class="btn search-btn" type="submit">Search</button>
             </form>
             <div class="header-right">
-                <a href="/cart" class="cartbtn">Cart</a>
+                <form action="{{ url_for('cart') }}" method="get">
+                    <button type="submit" class="cartbtn">Cart</button>
+                </form>
                 <div class="dropdown">
                     <button class="dropbtn">Account &#x25BC;</button>
                     <div class="dropdown-content">

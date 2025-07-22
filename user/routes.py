@@ -19,10 +19,12 @@ def signup():
 def signout():
     return User().signout()
     
-@app.route('/user/login', methods=['POST'])
+@app.route('/user/login', methods=['GET', 'POST'])
 def login():
     from user.models import User
     user_model = User()
+    if request.method == 'GET':
+        return render_template('login.html', signup_error=None, login_error=None)
     result = user_model.login(server_render=True)
     if isinstance(result, dict) and result.get('error'):
         return render_template('login.html', signup_error=None, login_error=result['error'])

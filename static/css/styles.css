@@ -344,13 +344,14 @@ input[type=submit] {
   height: 44px;
   font-size: 16px;
   padding: 0 22px;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 32px 32px 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  border-left: none;
 }
 .header-search-bar .search-input {
   height: 44px;
-  border-radius: 4px 0 0 4px;
+  border-radius: 32px 0 0 32px;
   margin: 0;
   font-size: 16px;
 }
@@ -941,10 +942,10 @@ body {
   cursor: pointer;
   font-weight: 600;
   transition: background 0.15s;
-  text-decoration: none;
-  display: inline-block;
+  display:inline;
 }
 
-.cartbtn:hover {
+
+.cartbtn:hover {                                      
   background: var(--primary-dark);
 }
