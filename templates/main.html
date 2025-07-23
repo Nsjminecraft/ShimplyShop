@@ -25,7 +25,7 @@
         <a href="{{ url_for('all_products') }}" class="btn btn--secondary" style="position: absolute; right: 0; top: 55%; transform: translateY(-55%);">See All Products</a>
     </div>
     <div class="products">
-        {% for product in products[:10] %}
+        {% for product in products[:8] %}
         <div class="product-card">
             <a href="{{ url_for('product_detail', product_id=product['_id']) }}">
                 <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
