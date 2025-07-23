@@ -110,6 +110,12 @@ def product_detail(product_id):
         return "Product not found", 404
     return render_template('products.html', product=product)
 
+@app.route('/products')
+def all_products():
+    products = list(db.products.find())
+    categories = list(db.categories.find())
+    return render_template('all_products.html', products=products, categories=categories)
+
 def is_admin():
     user = session.get('user')
     return user and user.get('email') == 'admin@shri.com'

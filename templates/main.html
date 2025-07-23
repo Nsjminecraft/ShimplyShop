@@ -20,9 +20,12 @@
         {% endfor %}
     </div>
 
-    <h2 class="section-title">Trending Now</h2>
+    <div style="display: flex; justify-content: center; position: relative; margin-bottom: 1.5rem;">
+        <h2 class="section-title" style="text-align: center;">Trending Now</h2>
+        <a href="{{ url_for('all_products') }}" class="btn btn--secondary" style="position: absolute; right: 0; top: 55%; transform: translateY(-55%);">See All Products</a>
+    </div>
     <div class="products">
-        {% for product in products %}
+        {% for product in products[:10] %}
         <div class="product-card">
             <a href="{{ url_for('product_detail', product_id=product['_id']) }}">
                 <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
@@ -35,5 +38,6 @@
         </div>
         {% endfor %}
     </div>
+
 </div>
 {% endblock %}
