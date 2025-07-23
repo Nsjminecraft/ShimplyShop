@@ -1,6 +1,8 @@
 from flask import Flask, render_template, session, redirect
 from functools import wraps
 import pymongo
+from pymongo import MongoClient
+from gridfs import GridFS
 
 app=Flask(__name__)
 

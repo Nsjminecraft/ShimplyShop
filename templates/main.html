@@ -28,7 +28,11 @@
         {% for product in products[:8] %}
         <div class="product-card">
             <a href="{{ url_for('product_detail', product_id=product['_id']) }}">
-                <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
+                {% if 'image_id' in product %}
+                    <img src="{{ url_for('serve_image', image_id=product['image_id']) }}" alt="{{ product['name'] }}" class="product-img">
+                {% else %}
+                    <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
+                {% endif %}
                 <h3>{{ product['name'] }}</h3>
             </a>
             <p>₹{{ "%.2f"|format(product['price']) }}</p>

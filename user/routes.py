@@ -1,9 +1,29 @@
+import os
+import base64
 from flask import session, redirect, url_for, render_template, request, flash
 from app import app, db
 from user.models import User
 import uuid
-from bson import ObjectId
+from bson import ObjectId, Binary
+from bson.binary import Binary
 import re
+from werkzeug.utils import secure_filename
+from gridfs import GridFS, NoFile
+from io import BytesIO
+from flask import send_file, abort
+from pymongo import MongoClient
+from gridfs import GridFS
+
+# Initialize GridFS
+fs = GridFS(db)
+
+def get_image(image_id):
+    try:
+        # Try to get the file from GridFS
+        grid_out = fs.get(ObjectId(image_id))
+        return grid_out
+    except NoFile:
+        return None
 
 
 @app.route('/user/signup', methods=['POST'])
@@ -80,28 +100,76 @@ def update_cart(product_id):
         pass  # Optionally flash an error message
     return redirect(url_for('cart'))
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
 @app.route('/admin/add_product', methods=['GET','POST'])
 def add_product():
     if request.method == 'POST':
-        category = request.form.get('category')
-        if not category:
-            flash('Category is required.')
-            categories = list(db.categories.find())
-            # Re-render form with error
-            return render_template('add_product.html', categories=categories)
-        product = {
-            "_id": uuid.uuid4().hex,
-            "name": request.form['name'],
-            "price": float(request.form['price']),
-            "stock": int(request.form['stock']),
-            "description": request.form['description'],
-            "image": request.form['image'],  # store image URL or filename
-            "category": category
-        }
-        db.products.insert_one(product)
-        return redirect(url_for('main'))
+        # Check if the post request has the file part
+        if 'image' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        
+        file = request.files['image']
+        
+        # If user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+            
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Read the file into memory
+            image_data = file.read()
+            
+            # Store the file in GridFS
+            file_id = fs.put(
+                image_data,
+                filename=filename,
+                content_type=file.content_type
+            )
+            
+            category = request.form.get('category')
+            if not category:
+                flash('Category is required.')
+                categories = list(db.categories.find())
+                return render_template('add_product.html', categories=categories)
+                
+            product = {
+                "_id": uuid.uuid4().hex,
+                "name": request.form['name'],
+                "price": float(request.form['price']),
+                "stock": int(request.form['stock']),
+                "description": request.form['description'],
+                "image_id": str(file_id),  # Store the GridFS file ID
+                "category": category,
+                "image_type": file.content_type
+            }
+            
+            db.products.insert_one(product)
+            return redirect(url_for('main'))
+        
+        flash('Allowed file types are: png, jpg, jpeg, gif')
+        categories = list(db.categories.find())
+        return render_template('add_product.html', categories=categories)
+        
     categories = list(db.categories.find())
     return render_template('add_product.html', categories=categories)
+
+@app.route('/image/<image_id>')
+def serve_image(image_id):
+    try:
+        grid_out = fs.get(ObjectId(image_id))
+        return send_file(
+            BytesIO(grid_out.read()),
+            mimetype=grid_out.content_type
+        )
+    except Exception as e:
+        app.logger.error(f"Error serving image {image_id}: {str(e)}")
+        abort(404)
 
 @app.route('/product/<product_id>')
 def product_detail(product_id):

@@ -2,7 +2,11 @@
 {% block content %}
 <div class="main-wrapper">
     <div class="product-detail">
-        <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img-large">
+        {% if 'image_id' in product %}
+            <img src="{{ url_for('serve_image', image_id=product['image_id']) }}" alt="{{ product['name'] }}" class="product-img-large">
+        {% else %}
+            <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img-large">
+        {% endif %}
         <div class="product-info">
             <h2>{{ product['name'] }}</h2>
             <p><strong>Price:</strong> ${{ "%.2f"|format(product['price']) }}</p>
