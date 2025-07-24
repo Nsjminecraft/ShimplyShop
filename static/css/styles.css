@@ -816,6 +816,63 @@ body {
   font-size: 0.95rem;
 }
 
+/* Flash Messages */
+.flash-messages {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 100%;
+    max-width: 600px;
+    padding: 0 20px;
+}
+
+.alert {
+    padding: 12px 20px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideDown 0.3s ease-out;
+}
+
+.alert-success {
+    background-color: #4CAF50;
+    border-left: 4px solid #388E3C;
+}
+
+.alert-error {
+    background-color: #F44336;
+    border-left: 4px solid #D32F2F;
+}
+
+.alert-info {
+    background-color: #2196F3;
+    border-left: 4px solid #1976D2;
+}
+
+.alert-warning {
+    background-color: #FFC107;
+    color: #212121;
+    border-left: 4px solid #FFA000;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 .cart-remove-btn {
   background: var(--red);
   color: var(--white);

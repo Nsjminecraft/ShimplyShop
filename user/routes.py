@@ -62,6 +62,9 @@ def add_to_cart(product_id):
     cart = session.get('cart', {})
     cart[product_id] = cart.get(product_id, 0) + 1
     session['cart'] = cart
+    product = db.products.find_one({'_id': product_id})
+    product_name = product.get('name', 'Item') if product else 'Item'
+    flash(f'{product_name} has been added to your cart!', 'success')
     return redirect(request.referrer or url_for('main'))
 
 @app.route('/cart')
@@ -73,7 +76,7 @@ def cart():
         product = db.products.find_one({"_id": product_id})
         if product:
             product['qty'] = qty
-            product['subtotal'] = product['price'] * qty
+            product['subtotal']= product['price'] * qty
             total += product['subtotal']
             products.append(product)
     return render_template('cart.html', products=products, total=total)
