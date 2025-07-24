@@ -11,9 +11,29 @@
         <input type="number" name="stock" required><br>
         <label>Description:</label>
         <textarea name="description" required></textarea><br>
-        <label>Product Image:</label>
-        <input type="file" name="image" accept="image/*" required><br>
-        <small>Accepted formats: JPG, PNG, GIF</small><br>
+        <div class="form-group">
+            <label>Main Image (required):</label>
+            <input type="file" name="main_image" accept="image/*" required>
+            <small>Main product image (JPG, PNG, GIF)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Additional Image 1 (optional):</label>
+            <input type="file" name="image2" accept="image/*">
+            <small>Second product image (JPG, PNG, GIF)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Additional Image 2 (optional):</label>
+            <input type="file" name="image3" accept="image/*">
+            <small>Third product image (JPG, PNG, GIF)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Product Video (optional):</label>
+            <input type="file" name="video" accept="video/*">
+            <small>Product video (MP4, WebM, OGG)</small>
+        </div>
         <label>Category:</label>
         <select name="category" required>
             <option value="" disabled selected>Select a category</option>

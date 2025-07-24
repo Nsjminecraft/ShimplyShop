@@ -107,58 +107,99 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
+def allowed_video_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'mp4', 'webm', 'ogg'}
+
+def save_uploaded_file(file, file_type='image'):
+    """Helper function to save uploaded file to GridFS"""
+    if not file or file.filename == '':
+        return None
+        
+    if file_type == 'image' and not allowed_file(file.filename):
+        return None
+    elif file_type == 'video' and not allowed_video_file(file.filename):
+        return None
+        
+    filename = secure_filename(file.filename)
+    file_id = fs.put(
+        file,
+        filename=filename,
+        content_type=file.content_type
+    )
+    return str(file_id)
+
 @app.route('/admin/add_product', methods=['GET','POST'])
 def add_product():
     if request.method == 'POST':
-        # Check if the post request has the file part
-        if 'image' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
-        
-        file = request.files['image']
-        
-        # If user does not select file, browser also
-        # submit an empty part without filename
-        if file.filename == '':
-            flash('No selected file')
+        # Check if main image is provided
+        if 'main_image' not in request.files:
+            flash('Main image is required', 'error')
             return redirect(request.url)
             
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            # Read the file into memory
-            image_data = file.read()
-            
-            # Store the file in GridFS
-            file_id = fs.put(
-                image_data,
-                filename=filename,
-                content_type=file.content_type
-            )
-            
-            category = request.form.get('category')
-            if not category:
-                flash('Category is required.')
-                categories = list(db.categories.find())
-                return render_template('add_product.html', categories=categories)
-                
-            product = {
-                "_id": uuid.uuid4().hex,
-                "name": request.form['name'],
-                "price": float(request.form['price']),
-                "stock": int(request.form['stock']),
-                "description": request.form['description'],
-                "image_id": str(file_id),  # Store the GridFS file ID
-                "category": category,
-                "image_type": file.content_type
-            }
-            
-            db.products.insert_one(product)
-            return redirect(url_for('main'))
+        # Save main image
+        main_image = request.files['main_image']
+        main_image_id = save_uploaded_file(main_image)
         
-        flash('Allowed file types are: png, jpg, jpeg, gif')
-        categories = list(db.categories.find())
-        return render_template('add_product.html', categories=categories)
+        if not main_image_id:
+            flash('Invalid main image. Please upload a valid image file (PNG, JPG, JPEG, GIF).', 'error')
+            return redirect(request.url)
+            
+        # Save additional images
+        additional_images = []
+        for i in range(2, 4):  # For image2 and image3
+            file_key = f'image{i}'
+            if file_key in request.files:
+                file = request.files[file_key]
+                if file and file.filename != '':
+                    file_id = save_uploaded_file(file)
+                    if file_id:
+                        additional_images.append({
+                            'id': file_id,
+                            'content_type': file.content_type
+                        })
         
+        # Save video if provided
+        video_id = None
+        video_content_type = None
+        if 'video' in request.files:
+            video = request.files['video']
+            if video and video.filename != '':
+                video_id = save_uploaded_file(video, file_type='video')
+                if video_id:
+                    video_content_type = video.content_type
+        
+        # Get form data
+        name = request.form.get('name')
+        price = float(request.form.get('price', 0))
+        stock = int(request.form.get('stock', 0))
+        description = request.form.get('description', '')
+        category = request.form.get('category')
+        
+        # Create product document
+        product = {
+            "_id": str(uuid.uuid4()),
+            "name": name,
+            "price": price,
+            "stock": stock,
+            "description": description,
+            "main_image": {
+                'id': main_image_id,
+                'content_type': main_image.content_type
+            },
+            "additional_images": additional_images,
+            "video": {
+                'id': video_id,
+                'content_type': video_content_type
+            } if video_id else None,
+            "category": category
+        }
+        
+        db.products.insert_one(product)
+        flash('Product added successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    # GET request - show the form
     categories = list(db.categories.find())
     return render_template('add_product.html', categories=categories)
 
@@ -172,6 +213,52 @@ def serve_image(image_id):
         )
     except Exception as e:
         app.logger.error(f"Error serving image {image_id}: {str(e)}")
+        abort(404)
+
+@app.route('/video/<video_id>')
+def serve_video(video_id):
+    try:
+        grid_out = fs.get(ObjectId(video_id))
+        # Enable range requests for video streaming
+        range_header = request.headers.get('Range', None)
+        if not range_header:
+            return send_file(
+                BytesIO(grid_out.read()),
+                mimetype=grid_out.content_type,
+                as_attachment=False
+            )
+        
+        # Handle range requests for video seeking
+        size = grid_out.length
+        byte1, byte2 = 0, None
+        
+        # Parse the range header
+        range_header = range_header.replace('bytes=', '').split('-')
+        if len(range_header) == 1:
+            byte1 = int(range_header[0] if range_header[0] else 0)
+        if len(range_header) > 1:
+            byte1 = int(range_header[0] if range_header[0] else 0)
+            byte2 = int(range_header[1]) if range_header[1] else size - 1
+        
+        length = size - byte1 if byte2 is None else (byte2 - byte1 + 1)
+        
+        grid_out.seek(byte1)
+        data = grid_out.read(length)
+        
+        response = Response(
+            data,
+            206,  # Partial Content
+            mimetype=grid_out.content_type,
+            direct_passthrough=True,
+            content_type=grid_out.content_type
+        )
+        
+        response.headers.add('Content-Range', f'bytes {byte1}-{byte1 + len(data) - 1}/{size}')
+        response.headers.add('Accept-Ranges', 'bytes')
+        return response
+        
+    except Exception as e:
+        app.logger.error(f"Error serving video {video_id}: {str(e)}")
         abort(404)
 
 @app.route('/product/<product_id>')
