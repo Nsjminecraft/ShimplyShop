@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Your Cart</h2>
+    {% if products %}
+    <div class="cart-card">
+        <table class="cart-table">
+            <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+            {% for product in products %}
+            <tr data-product-id="{{ product._id|string }}">
+                <td>
+                    <div class="cart-product-info">
+                        {% if product.image %}
+                        <img src="{{ url_for('serve_image', image_id=product.image) }}" alt="{{ product.name }}" class="cart-product-img">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="No image available" class="cart-product-img">
+                        {% endif %}
+                        <span>{{ product.name }}</span>
+                    </div>
+                </td>
+                <td>
+                    <form action="{{ url_for('update_cart', product_id=product._id) }}" method="post" style="display:inline;">
+                        <input type="number" name="qty" value="{{ product.qty }}" min="1" class="cart-qty-input" data-product-id="{{ product._id|string }}">
+                        <button type="submit" class="btn btn--secondary cart-update-btn">Update</button>
+                    </form>
+                </td>
+                <td>₹{{ "%.2f"|format(product.price) }}</td>
+                <td>₹{{ "%.2f"|format(product.subtotal) }}</td>
+                <td>
+                    <form action="{{ url_for('remove_from_cart', product_id=product._id) }}" method="post" style="margin:0;">
+                        <button class="btn cart-remove-btn" type="submit">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr class="cart-total-row">
+                <td colspan="3" style="text-align:right;"><strong>Total:</strong></td>
+                <td colspan="2"><strong>₹{{ "%.2f"|format(total) }}</strong></td>
+            </tr>
+        </table>
+        <div class="cart-checkout-row">
+            <button id="checkout-button" class="btn cart-checkout-btn">
+                <i class="fas fa-credit-card me-2"></i>Buy Now
+            </button>
+        </div>
+        
+        <!-- Stripe.js -->
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            const stripe = Stripe('{{ stripe_public_key }}');
+            const checkoutButton = document.getElementById('checkout-button');
+            
+            checkoutButton.addEventListener('click', async () => {
+                try {
+                    // Disable button and show loading state
+                    checkoutButton.disabled = true;
+                    checkoutButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+                    
+                    // Get all product IDs and quantities from the cart
+                    const cartItems = [];
+                    document.querySelectorAll('tr[data-product-id]').forEach(row => {
+                        const productId = row.getAttribute('data-product-id');
+                        const quantity = row.querySelector('input[type="number"]')?.value || 1;
+                        cartItems.push({
+                            id: productId,
+                            quantity: parseInt(quantity)
+                        });
+                    });
+                    
+                    if (cartItems.length === 0) {
+                        throw new Error('Your cart is empty');
+                    }
+                    
+                    // Create checkout session
+                    const response = await fetch('/create-checkout-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            items: cartItems
+                        }),
+                    });
+                    
+                    const session = await response.json();
+                    
+                    if (session.error) {
+                        throw new Error(session.error);
+                    }
+                    
+                    // Redirect to Stripe Checkout
+                    const result = await stripe.redirectToCheckout({
+                        sessionId: session.sessionId
+                    });
+                    
+                    if (result.error) {
+                        throw new Error(result.error.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error: ' + error.message);
+                    checkoutButton.disabled = false;
+                    checkoutButton.innerHTML = '<i class="fas fa-credit-card me-2"></i>Buy Now';
+                }
+            });
+        </script>
+    </div>
+    {% else %}
+    <p>Your cart is empty.</p>
+    {% endif %}
+</div>
+{% endblock %}

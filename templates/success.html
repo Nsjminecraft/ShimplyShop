@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <div class="checkmark-circle">
+                        <div class="checkmark">✓</div>
+                    </div>
+                    <h2 class="text-success">Payment Successful!</h2>
+                    <p class="lead">Thank you for your purchase!</p>
+                    <p>Your order has been processed successfully.</p>
+                    <p class="text-muted">Order ID: {{ session.id }}</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.checkmark-circle {
+    width: 80px;
+    height: 80px;
+    background-color: #28a745;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+.checkmark {
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

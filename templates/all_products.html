@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="main-wrapper">
+    <h2 class="section-title">All Products</h2>
+    {% if products %}
+    <div class="products">
+        {% for product in products %}
+        <div class="product-card">
+            <a href="{{ url_for('product_detail', product_id=product['_id']) }}">
+                {% if 'image_id' in product %}
+                    <img src="{{ url_for('serve_image', image_id=product['image_id']) }}" alt="{{ product['name'] }}" class="product-img">
+                {% else %}
+                    <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
+                {% endif %}
+                <h3>{{ product['name'] }}</h3>
+            </a>
+            <p>₹{{ "%.2f"|format(product['price']) }}</p>
+            <form action="{{ url_for('add_to_cart', product_id=product['_id']) }}" method="post" style="margin:0;">
+                <button class="btn" type="submit">Add to Cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No products found.</p>
+    {% endif %}
+</div>
+{% endblock %} 

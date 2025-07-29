@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="card-wrapper">
+        <div class="card">
+            <h1 class="center">Dashboard</h1>
+            <p class="center">You are currently Signed In.</p>
+
+            <div class="center">
+                <a href="/user/signout" class="ctn btn--secondary">Sign Out</a>
+                <a href="/main" class="ctn btn--secondary">Main page</a>
+                {% if session['user'] and session['user']['email'] == 'admin@shri.com' %}
+                    <a href="/admin/dashboard" class="ctn btn--secondary">Admin Dashboard</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+
+            <h2 class="center">Your Info</h2>
+
+            <p>
+                <strong>ID:</strong> {{ session['user']['_id'] }}<br>
+                <strong>Name:</strong> {{ session['user']['name'] }}<br>
+                <strong>Email:</strong> {{ session['user']['email'] }}
+            </p>
+
+
+        </div>
+
+    </div>
+{% endblock %} 

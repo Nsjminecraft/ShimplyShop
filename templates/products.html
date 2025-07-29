@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+{% block content %}
+<div class="main-wrapper">
+    <div class="product-detail">
+        <!-- Main Image -->
+        <div class="main-image-container">
+            <img src="{{ url_for('serve_image', image_id=product['main_image']['id']) }}" 
+                 alt="{{ product['name'] }}" 
+                 class="product-img-large">
+        </div>
+        
+        <!-- Additional Images -->
+        {% if product.get('additional_images') %}
+        <div class="additional-images">
+            <h3>Additional Images</h3>
+            <div class="image-gallery">
+                {% for img in product['additional_images'] %}
+                <div class="gallery-item">
+                    <img src="{{ url_for('serve_image', image_id=img['id']) }}" 
+                         alt="{{ product['name'] }} - Image {{ loop.index + 1 }}"
+                         class="thumbnail">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Video -->
+        {% if product.get('video') and product['video'].get('id') %}
+        <div class="product-video">
+            <h3>Product Video</h3>
+            <video controls>
+                <source src="{{ url_for('serve_video', video_id=product['video']['id']) }}" 
+                        type="{{ product['video']['content_type'] }}">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        {% endif %}
+        
+        <div class="product-info">
+            <h2>{{ product['name'] }}</h2>
+            <p><strong>Price:</strong> ${{ "%.2f"|format(product['price']) }}</p>
+            <p><strong>Stock:</strong> {{ product['stock'] }}</p>
+            <div class="description">
+                <h3>Description</h3>
+                <p>{{ product['description'] }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <form action="{{ url_for('add_to_cart', product_id=product['_id']) }}" method="post" class="add-to-cart-form">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                    </button>
+                </form>
+                <button id="checkout-button" class="btn btn-primary" data-product-id="{{ product['_id'] }}">
+                    <i class="fas fa-credit-card me-2"></i>Buy Now
+                </button>
+            </div>
+            
+            <!-- Stripe.js -->
+            <script src="https://js.stripe.com/v3/"></script>
+            <script>
+                const stripe = Stripe('{{ stripe_public_key }}');
+                const checkoutButton = document.getElementById('checkout-button');
+                
+                checkoutButton.addEventListener('click', async () => {
+                    const productId = checkoutButton.dataset.productId;
+                    
+                    try {
+                        // Disable button and show loading state
+                        checkoutButton.disabled = true;
+                        checkoutButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+                        
+                        // Create checkout session
+                        const response = await fetch('/create-checkout-session', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                product_id: productId
+                            }),
+                        });
+                        
+                        const session = await response.json();
+                        
+                        if (session.error) {
+                            throw new Error(session.error);
+                        }
+                        
+                        // Redirect to Stripe Checkout
+                        const result = await stripe.redirectToCheckout({
+                            sessionId: session.sessionId
+                        });
+                        
+                        if (result.error) {
+                            throw result.error;
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error: ' + error.message);
+                        // Reset button
+                        checkoutButton.disabled = false;
+                        checkoutButton.innerHTML = '<i class="fas fa-credit-card me-2"></i>Buy Now';
+                    }
+                });
+            </script>
+        </div>
+    </div>
+</div>
+{% endblock %}

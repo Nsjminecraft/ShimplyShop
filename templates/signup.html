@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="card-wrapper">
+
+        <div class="card">
+
+            <h1 class="center">Create an Account</h1>
+
+            <form name="signup_form" method="post" action="/user/signup">
+
+                <label for="name">Name</label>
+                <input type="text" name="name" class="field" required> 
+
+                <label for="email">Email</label>
+                <input type="text" name="email" class="field" required> 
+
+                <label for="password">Password</label>
+                <input type="password" name="password" class="field" required>
+
+                {% if signup_error %}
+                <p class="error">{{ signup_error }}</p>
+                {% endif %}
+
+                <input type="submit" value="Sign Up" class="btn">
+                
+            </form>
+
+        </div>
+    </div>
+
+
+{% endblock %}

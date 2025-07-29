@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main-wrapper">
+    <h2>Add Product</h2>
+    <form method="post" enctype="multipart/form-data">
+        <label>Name:</label>
+        <input type="text" name="name" required><br>
+        <label>Price:</label>
+        <input type="number" name="price" step="0.01" required><br>
+        <label>Stock:</label>
+        <input type="number" name="stock" required><br>
+        <label>Description:</label>
+        <textarea name="description" required></textarea><br>
+        <div class="form-group">
+            <label>Main Image (required):</label>
+            <input type="file" name="main_image" accept="image/*" required>
+            <small>Main product image (JPG, PNG, GIF)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Additional Image 1 (optional):</label>
+            <input type="file" name="image2" accept="image/*">
+            <small>Second product image (JPG, PNG, GIF)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Additional Image 2 (optional):</label>
+            <input type="file" name="image3" accept="image/*">
+            <small>Third product image (JPG, PNG, GIF)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Product Video (optional):</label>
+            <input type="file" name="video" accept="video/*">
+            <small>Product video (MP4, WebM, OGG)</small>
+        </div>
+        <label>Category:</label>
+        <select name="category" required>
+            <option value="" disabled selected>Select a category</option>
+            {% for category in categories %}
+                <option value="{{ category.name }}">{{ category.name }}</option>
+            {% endfor %}
+        </select><br>
+        <button class="btn" type="submit">Add Product</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+    <h1 class="textheroh1">Delicious Snacks Delivered</h1>
+    <p>Fresh Indian snacks, sweets, and traditional treats delivered to your doorstep worldwide.</p>
+    </form>
+</div>
+
+<div class="main-wrapper" style="background:transparent; box-shadow:none; padding:0;">
+    <h2 class="section-title">Shop by Category</h2>
+    <div class="categories">
+        {% for category in categories %}
+        <div class="category-card">
+            <a href="{{ url_for('category_page', category_name=category.name|lower|replace(' ', '-') ) }}">
+                <img src="/static/img/cat-{{ category.name|lower|replace(' ', '-') }}.jpg" alt="{{ category.name }}">
+                <span>{{ category.name }}</span>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="display: flex; justify-content: center; position: relative; margin-bottom: 1.5rem;">
+        <h2 class="section-title" style="text-align: center;">Trending Now</h2>
+        <a href="{{ url_for('all_products') }}" class="btn btn--secondary" style="position: absolute; right: 0; top: 55%; transform: translateY(-55%);">See All Products</a>
+    </div>
+    <div class="products">
+        {% for product in products[:8] %}
+        <div class="product-card">
+            <a href="{{ url_for('product_detail', product_id=product['_id']) }}">
+                {% if 'image_id' in product %}
+                    <img src="{{ url_for('serve_image', image_id=product['image_id']) }}" alt="{{ product['name'] }}" class="product-img">
+                {% else %}
+                    <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="product-img">
+                {% endif %}
+                <h3>{{ product['name'] }}</h3>
+            </a>
+            <p>₹{{ "%.2f"|format(product['price']) }}</p>
+            <form action="{{ url_for('add_to_cart', product_id=product['_id']) }}" method="post" style="margin:0;">
+                <button class="btn" type="submit">Add to Cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

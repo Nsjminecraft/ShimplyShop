@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <div class="cancel-icon mb-4">
+                        ✕
+                    </div>
+                    <h2 class="text-danger">Payment Cancelled</h2>
+                    <p class="lead">Your payment was not completed.</p>
+                    <p>Don't worry, your cart has been saved. You can complete your purchase whenever you're ready.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cancel-icon {
+    font-size: 80px;
+    color: #dc3545;
+    line-height: 1;
+}
+</style>
+{% endblock %}

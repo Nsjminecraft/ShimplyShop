@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="main-wrapper">
+    <h1 class="center">Admin Dashboard</h1>
+    <div class="card-wrapper">
+        <div class="card" style="flex:2; min-width:350px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2 style="margin:0;">Products</h2>
+                <a href="{{ url_for('add_product') }}" class="btn">Add New Product</a>
+            </div>
+            <form method="get" action="{{ url_for('admin_dashboard') }}" style="margin-bottom:16px;">
+                <input type="text" name="q" value="{{ request.args.get('q', '') }}" class="field" placeholder="Search products by name or description..." style="width:100%; max-width:350px; display:inline-block;">
+                <button type="submit" class="btn btn--secondary" style="margin-left:8px;">Search</button>
+                {% if request.args.get('q') %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn--secondary" style="margin-left:8px;">Clear</a>
+                {% endif %}
+            </form>
+            <div style="overflow-x:auto;">
+                <table class="cart-table" id="admin-products-table" style="width:100%; margin-bottom:24px;">
+                    <tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>${{ '%.2f'|format(product.price) }}</td>
+                        <td>{{ product.stock }}</td>
+                        <td>{{ product.description }}</td>
+                        <td>{{ product.category if product.category else 'None' }}</td>
+                        <td>
+                            <form action="{{ url_for('remove_product', product_id=product._id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn--secondary" onclick="return confirm('Remove this product?')">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="card" style="flex:1; min-width:250px;">
+            <h2>Categories</h2>
+            <form action="{{ url_for('add_category') }}" method="post" style="display:flex; gap:8px; margin-bottom:16px;">
+                <input type="text" name="category_name" placeholder="New Category" required class="field" style="margin:0;">
+                <button type="submit" class="btn">Add</button>
+            </form>
+            <ul style="list-style:none; padding:0;">
+                {% for category in categories %}
+                <li style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--grey-light);">
+                    <span>{{ category.name }}</span>
+                    <form action="{{ url_for('remove_category', category_id=category._id) }}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="btn btn--secondary" style="padding:4px 12px; font-size:13px;" onclick="return confirm('Remove this category?')">Remove</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %} 

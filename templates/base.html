@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Simpleyshop</title>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-left">
+            <img src="/static/img/logo.png" alt="Commers Logo" class="logo">
+            <a href="/main" class="storenameheader">Commers</a>
+        </div>
+        {% if not (request.endpoint in ['signup_page', 'landing', 'login_page']) %}
+            <form class="header-search-bar" action="/search" method="get">
+                <input type="text" name="q" placeholder="Search products, categories..." class="search-input">
+                <button class="btn search-btn" type="submit">Search</button>
+            </form>
+            <div class="header-right">
+                <form action="{{ url_for('cart') }}" method="get">
+                    <button type="submit" class="cartbtn">Cart</button>
+                </form>
+                <div class="dropdown">
+                    <button class="dropbtn">Account &#x25BC;</button>
+                    <div class="dropdown-content">
+                        <a href="/dashboard/">Account</a>
+                        <a href="/user/signout">Logout</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </header>
+
+    <!-- Flash Messages -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    {% block content %}
+        {# Template inserted here #}
+    {% endblock %}
+
+    <!-- <script src="{{ url_for('static', filename='js/jquery.js') }}"></script> -->
+    <!-- <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> -->
+</body>
+</html>
