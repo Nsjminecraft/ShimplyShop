@@ -3,18 +3,81 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8 text-center">
+        <div class="col-md-8">
             <div class="card">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <div class="checkmark-circle">
                         <div class="checkmark">✓</div>
                     </div>
                     <h2 class="text-success">Payment Successful!</h2>
                     <p class="lead">Thank you for your purchase!</p>
-                    <p>Your order has been processed successfully.</p>
-                    <p class="text-muted">Order ID: {{ session.id }}</p>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">Back to Dashboard</a>
+                    
+                    {% if error %}
+                        <div class="alert alert-warning">
+                            <strong>Note:</strong> {{ error }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <p>Your order has been processed successfully.</p>
+                            {% if order_id %}
+                                <p class="mb-0">Order ID: {{ order_id }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="order-summary mt-4">
+                            <h5 class="text-start mb-3">Order Summary</h5>
+                            {% if session and session.line_items and session.line_items.data %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Item</th>
+                                                <th class="text-end">Price</th>
+                                                <th class="text-center">Qty</th>
+                                                <th class="text-end">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in session.line_items.data %}
+                                            <tr>
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-end">${{ "%.2f"|format(item.amount_total / item.quantity) }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">${{ "%.2f"|format(item.amount_total) }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            <tr class="table-light">
+                                                <td colspan="3" class="text-end fw-bold">Total:</td>
+                                                <td class="text-end fw-bold">${{ "%.2f"|format(session.amount_total) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    Order details will be available in your order history.
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-4">
+                            <p>We've sent a confirmation email to <strong>{{ session.customer_details.email if session and session.customer_details else 'your email' }}</strong>.</p>
+                            
+                            <div class="d-flex justify-content-center gap-3 mt-4">
+                                <a href="{{ url_for('order.my_orders') }}" class="btn btn-primary">
+                                    View My Orders
+                                </a>
+                                <a href="{{ url_for('main') }}" class="btn btn-outline-secondary">
+                                    Continue Shopping
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
+            </div>
+            
+            <div class="mt-4 text-muted text-center">
+                Questions about your order? Please check your order status or contact support.
             </div>
         </div>
     </div>

@@ -288,6 +288,34 @@ def serve_video(video_id):
         abort(404)
 
 
+@app.route('/check-admin')
+def check_admin_status():
+    if 'user' not in session:
+        return 'Not logged in', 401
+    
+    # Get the current user's email from session
+    user_email = session['user'].get('email')
+    if not user_email:
+        return 'No email in session', 400
+    
+    # Find the user in the database
+    user = db.users.find_one({'email': user_email})
+    if not user:
+        return 'User not found in database', 404
+    
+    # Check current admin status
+    is_admin = user.get('is_admin', False)
+    
+    # Update to admin if not already
+    if not is_admin:
+        db.users.update_one(
+            {'email': user_email},
+            {'$set': {'is_admin': True}}
+        )
+        return f'Updated {user_email} to admin status', 200
+    
+    return f'{user_email} is already an admin', 200
+
 @app.route('/products')
 def all_products():
     products = list(db.products.find())
@@ -296,7 +324,7 @@ def all_products():
 
 def is_admin():
     user = session.get('user')
-    return user and user.get('email') == 'admin@shri.com'
+    return user and user.get('is_admin', False)
 
 @app.route('/admin/dashboard')
 def admin_dashboard():

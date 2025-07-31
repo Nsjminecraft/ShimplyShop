@@ -1130,3 +1130,17 @@ body {
 .cartbtn:hover {                                      
   background: var(--primary-dark);
 }
+
+/* Styles for login and signup forms */
+.card-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+}
+
+.card-wrapper .card {
+    max-width: 400px;
+    width: 100%;
+    margin: 0;
+}

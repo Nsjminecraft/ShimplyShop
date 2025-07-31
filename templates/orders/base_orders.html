@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    Order Menu
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <a href="{{ url_for('order.my_orders') }}">My Orders</a>
+                    </li>
+                    {% if session.user.get('is_admin', False) %}
+                    <li class="list-group-item">
+                        <a href="{{ url_for('order.admin_orders') }}">Admin Orders</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9">
+            {% block order_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "orders/base_orders.html" %}
+
+{% block order_content %}
+    <div class="card">
+        <div class="card-header">
+            <h2>My Orders</h2>
+        </div>
+        <div class="card-body">
+            {% if orders and orders is iterable %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>#{{ order._id|default('N/A')|truncate(8, True, '') }}</td>
+                                <td>
+                                    {% if order.created_at %}
+                                        {% if order.created_at is string %}
+                                            {{ order.created_at|datetimeformat }}
+                                        {% else %}
+                                            {{ order.created_at.strftime('%b %d, %Y') }}
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.items is defined and order.items is not none %}
+                                        {{ order.items|length if order.items is iterable else 0 }} item{% if order.items is iterable and order.items|length != 1 %}s{% endif %}
+                                    {% else %}
+                                        0 items
+                                    {% endif %}
+                                </td>
+                                <td>${{ "%.2f"|format(order.total_amount/100) if order.total_amount is defined else '0.00' }}</td>
+                                <td>
+                                    {% if order.status %}
+                                        <span class="badge 
+                                            {% if order.status == 'Delivered' %}bg-success
+                                            {% elif order.status in ['Canceled', 'Failed Delivery', 'Shipment Failed'] %}bg-danger
+                                            {% elif order.status == 'Order Placed' %}bg-secondary
+                                            {% else %}bg-primary{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                        {% if order.tracking_number %}
+                                            <br><small>Tracking: {{ order.tracking_number }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order._id %}
+                                        <a href="{{ url_for('order.order_detail', order_id=order._id) }}" class="btn btn-sm btn-info">
+                                            View Details
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        You haven't placed any orders yet.
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    You haven't placed any orders yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

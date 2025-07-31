@@ -1,0 +1,143 @@
+
+/* General Card Styling */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease-in-out;
+    margin-bottom: 2rem;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background-color: #f8f9fa !important; /* Use important to override bootstrap */
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 500;
+}
+
+/* Table Styling */
+.table {
+    margin-bottom: 0; /* Remove default bottom margin when inside a card */
+    width: 100%;
+    table-layout: auto;
+}
+
+.table th {
+    font-weight: 500;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    white-space: nowrap;
+    padding: 0.75rem;
+}
+
+.container-fluid {
+    padding: 0 2rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f3f5 !important; /* Use important to override bootstrap */
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+/* Status Badges */
+.badge.rounded-pill {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4em 0.9em;
+}
+
+/* Action Buttons */
+.btn-group .btn {
+    transition: all 0.2s ease;
+    min-width: 36px; /* Ensure buttons have consistent width */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-group .btn:hover {
+    transform: scale(1.05);
+    z-index: 2;
+}
+
+/* Order Detail Page */
+.order-detail-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #343a40;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.order-detail-card address {
+    font-style: normal;
+    line-height: 1.6;
+}
+
+.order-items-table img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+}
+
+.order-summary-list .list-group-item {
+    border-color: #e9ecef;
+}
+
+.order-summary-list .list-group-item strong {
+    font-weight: 600;
+}
+
+/* Modal Styling */
+.modal-content {
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+}
+
+/* Clickable rows */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.table-hover tbody .clickable-row:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .card-header .badge {
+        margin-top: 0.5rem;
+    }
+}
+

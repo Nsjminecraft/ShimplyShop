@@ -6,7 +6,10 @@
         <div class="card" style="flex:2; min-width:350px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h2 style="margin:0;">Products</h2>
-                <a href="{{ url_for('add_product') }}" class="btn">Add New Product</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="{{ url_for('order.admin_orders') }}" class="btn btn--secondary">View All Orders</a>
+                    <a href="{{ url_for('add_product') }}" class="btn">Add New Product</a>
+                </div>
             </div>
             <form method="get" action="{{ url_for('admin_dashboard') }}" style="margin-bottom:16px;">
                 <input type="text" name="q" value="{{ request.args.get('q', '') }}" class="field" placeholder="Search products by name or description..." style="width:100%; max-width:350px; display:inline-block;">

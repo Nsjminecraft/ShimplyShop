@@ -38,6 +38,22 @@ def login_required(f):
 
 # Routes
 from user import routes
+from user.order_routes import order_bp as order_blueprint
+
+# Register blueprints
+app.register_blueprint(order_blueprint, url_prefix='/user')
+
+# Add is_admin to user session
+@app.context_processor
+def inject_user():
+    if 'user' in session:
+        # Check if user is admin (you can modify this based on your user model)
+        user = db.users.find_one({'_id': session['user']['_id']})
+        if user and 'is_admin' in user and user['is_admin']:
+            session['user']['is_admin'] = True
+        else:
+            session['user']['is_admin'] = False
+    return {}
 
 @app.route('/', methods=['GET'])
 def landing():
@@ -50,6 +66,10 @@ def dashboard():
 
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
+
+# Import and initialize filters
+from filters import init_app as init_filters
+init_filters(app)
 
 @app.route('/product/<product_id>')
 @login_required
@@ -156,6 +176,7 @@ def create_checkout_session():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
+@login_required
 def success():
     session_id = request.args.get('session_id')
     if not session_id:
@@ -163,10 +184,117 @@ def success():
     
     try:
         # Verify the session was successful
-        checkout_session = stripe.checkout.Session.retrieve(session_id)
-        return render_template('success.html', session=checkout_session)
+        checkout_session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=['line_items', 'customer', 'shipping']
+        )
+        
+        app.logger.info(f"Checkout session: {checkout_session}")
+        
+        # Check if this is a checkout session with line items
+        if checkout_session.payment_status == 'paid' and checkout_session.mode == 'payment':
+            # Get the cart items from the database
+            cart = db.carts.find_one({'user_id': session['user']['_id']}) or {'items': []}
+            
+            # Prepare order items
+            order_items = []
+            total_amount = 0
+            
+            # Get line items directly from Stripe
+            line_items = stripe.checkout.Session.list_line_items(session_id)
+            
+            if line_items and hasattr(line_items, 'data'):
+                for item in line_items.data:
+                    product_name = item.description or 'Unnamed Product'
+                    price = item.amount_total  # in cents
+                    quantity = item.quantity
+                    
+                    order_items.append({
+                        'product_id': item.price.product if hasattr(item, 'price') and hasattr(item.price, 'product') else 'unknown',
+                        'name': product_name,
+                        'price': price,
+                        'quantity': quantity
+                    })
+                    total_amount += price * quantity
+            else:
+                # Fallback to cart items if line items not available
+                for item in cart.get('items', []):
+                    product = db.products.find_one({'_id': ObjectId(item.get('product_id'))})
+                    if product:
+                        price = int(float(product.get('price', 0)) * 100)  # in cents
+                        quantity = item.get('quantity', 1)
+                        order_items.append({
+                            'product_id': str(product['_id']),
+                            'name': product.get('name', 'Unnamed Product'),
+                            'price': price,
+                            'quantity': quantity
+                        })
+                        total_amount += price * quantity
+            
+            # Create shipping address from checkout session
+            shipping_address = {}
+            if hasattr(checkout_session, 'shipping') and checkout_session.shipping:
+                address = checkout_session.shipping.address
+                shipping_address = {
+                    'name': getattr(checkout_session.shipping, 'name', ''),
+                    'line1': getattr(address, 'line1', ''),
+                    'line2': getattr(address, 'line2', ''),
+                    'city': getattr(address, 'city', ''),
+                    'state': getattr(address, 'state', ''),
+                    'postal_code': getattr(address, 'postal_code', ''),
+                    'country': getattr(address, 'country', '')
+                }
+            
+            # Create order in database
+            from user.order_models import Order
+            order_id = Order.create_order(
+                user_id=session['user']['_id'],
+                items=order_items,
+                total_amount=total_amount,
+                shipping_address=shipping_address,
+                payment_intent_id=checkout_session.payment_intent
+            )
+            
+            # Clear the user's cart after successful order
+            if cart and 'items' in cart:
+                db.carts.update_one(
+                    {'user_id': session['user']['_id']},
+                    {'$set': {'items': []}}
+                )
+            
+            # Prepare simplified data for the success page
+            success_data = {
+                'id': checkout_session.id,
+                'amount_total': checkout_session.amount_total / 100,  # Convert to dollars
+                'payment_status': checkout_session.payment_status,
+                'customer_details': {
+                    'email': getattr(checkout_session, 'customer_email', 
+                                  getattr(checkout_session.customer_details, 'email', '') 
+                                  if hasattr(checkout_session, 'customer_details') else '')
+                },
+                'line_items': {
+                    'data': [
+                        {
+                            'description': item.description or 'Unnamed Product',
+                            'amount_total': item.amount_total / 100,  # Convert to dollars
+                            'quantity': item.quantity
+                        }
+                        for item in line_items.data if hasattr(line_items, 'data')
+                    ]
+                }
+            }
+            
+            return render_template('success.html', 
+                                session=success_data,
+                                order_id=order_id)
+        
+        return render_template('success.html', 
+                            error="Order processing incomplete. Please check your orders or contact support.")
+    
     except Exception as e:
-        return str(e), 400
+        app.logger.error(f"Error in success route: {str(e)}", exc_info=True)
+        return render_template('success.html', 
+                            error=f"An error occurred while processing your order. Your payment was successful, but there was an issue processing your order. Please contact support with order ID: {session_id}")
 
 @app.route('/cancel')
 def cancel():

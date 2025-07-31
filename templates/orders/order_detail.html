@@ -1,0 +1,139 @@
+{% extends "orders/base_orders.html" %}
+
+{% block order_content %}
+    {% if not order %}
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Order Not Found</h4>
+            <p>The requested order could not be found or you don't have permission to view it.</p>
+            <a href="{{ url_for('order.my_orders') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to My Orders
+            </a>
+        </div>
+    {% else %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h2 class="h4 mb-0">Order Details</h2>
+                <span class="badge rounded-pill 
+                    {% if order.status == 'Delivered' %}text-bg-success
+                    {% elif order.status in ['Canceled', 'Failed Delivery', 'Shipment Failed'] %}text-bg-danger
+                    {% elif order.status == 'Shipped' %}text-bg-info
+                    {% elif order.status == 'Processing' %}text-bg-primary
+                    {% else %}text-bg-secondary{% endif %}">
+                    {{ order.status }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <h5 class="card-title">Order Information</h5>
+                        <p class="card-text mb-1">
+                            <strong>Order ID:</strong> <code class="small">#{{ order._id|default('N/A') }}</code>
+                        </p>
+                        <p class="card-text mb-1">
+                            <strong>Date:</strong> 
+                            {% if order.created_at and order.created_at is not string %}
+                                {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                            {% else %}
+                                {{ order.created_at|default('N/A') }}
+                            {% endif %}
+                        </p>
+                        {% if order.tracking_number %}
+                            <p class="card-text mb-1"><strong>Tracking:</strong> {{ order.tracking_number }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="card-title">Shipping Address</h5>
+                        {% if order.shipping_address %}
+                            <address class="mb-0">
+                                <strong>{{ order.shipping_address.get('name', '') }}</strong><br>
+                                {{ order.shipping_address.get('line1', '') }}<br>
+                                {% if order.shipping_address.get('line2') %}
+                                    {{ order.shipping_address.line2 }}<br>
+                                {% endif %}
+                                {{ order.shipping_address.get('city', '') }}, {{ order.shipping_address.get('state', '') }} {{ order.shipping_address.get('postal_code', '') }}<br>
+                                {{ order.shipping_address.get('country', '') }}
+                            </address>
+                        {% else %}
+                            <p class="text-muted mb-0">No shipping address provided.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h5 class="card-title">Order Items</h5>
+                {% if order.items and order.items is iterable and order.items|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 60%;">Product</th>
+                                    <th class="text-end">Price</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr class="align-middle">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.image_url or url_for('static', filename='img/placeholder.png') }}" 
+                                                 alt="{{ item.get('name') }}" 
+                                                 class="img-fluid rounded me-3" 
+                                                 style="width: 60px; height: 60px; object-fit: cover;">
+                                            <div>
+                                                <strong>{{ item.get('name', 'Unnamed Product') }}</strong><br>
+                                                <small class="text-muted">SKU: {{ item.get('product_id', 'N/A')|truncate(12) }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">${{ "%.2f"|format((item.get('price', 0))/100) }}</td>
+                                    <td class="text-center">{{ item.get('quantity', 1) }}</td>
+                                    <td class="text-end fw-bold">${{ "%.2f"|format((item.get('price', 0) * item.get('quantity', 1))/100) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="row justify-content-end mt-3">
+                        <div class="col-md-5 col-lg-4">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Subtotal</span>
+                                    <span>${{ "%.2f"|format((order.total_amount|default(0))/100) }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Shipping</span>
+                                    <span>${{ "%.2f"|format((order.shipping_cost|default(0))/100) }}</span>
+                                </li>
+                                {% if order.tax_amount is defined and order.tax_amount > 0 %}
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Tax</span>
+                                    <span>${{ "%.2f"|format(order.tax_amount/100) }}</span>
+                                </li>
+                                {% endif %}
+                                <li class="list-group-item d-flex justify-content-between bg-light">
+                                    <strong class="h5 mb-0">Total</strong>
+                                    <strong class="h5 mb-0">${{ "%.2f"|format((order.total_amount|default(0))/100) }}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4 border rounded">
+                        <p class="mb-0 text-muted">No items found in this order.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light d-flex justify-content-between">
+                <a href="{{ url_for('order.my_orders') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to My Orders
+                </a>
+                {% if is_admin %}
+                    <a href="{{ url_for('order.admin_orders') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid-3x3-gap"></i> View All Orders
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}">
     <title>Simpleyshop</title>
 </head>
 <body>
@@ -26,7 +27,16 @@
                     <button class="dropbtn">Account &#x25BC;</button>
                     <div class="dropdown-content">
                         <a href="/dashboard/">Account</a>
-                        <a href="/user/signout">Logout</a>
+                        <a href="{{ url_for('order.my_orders') }}">My Orders</a>
+                        {% if session.user and session.user.get('is_admin') %}
+                        <a href="{{ url_for('order.admin_orders') }}" class="admin-link">
+                            <i class="bi bi-box-seam"></i> View All Orders
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        {% endif %}
+                        <a href="/user/signout" class="text-danger">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
                     </div>
                 </div>
             </div>
