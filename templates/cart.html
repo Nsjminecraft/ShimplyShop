@@ -51,67 +51,56 @@
         </table>
         <div class="cart-checkout-row">
             <button id="checkout-button" class="btn cart-checkout-btn">
-                <i class="fas fa-credit-card me-2"></i>Buy Now
+                <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
             </button>
         </div>
         
-        <!-- Stripe.js -->
         <script src="https://js.stripe.com/v3/"></script>
         <script>
-            const stripe = Stripe('{{ stripe_public_key }}');
             const checkoutButton = document.getElementById('checkout-button');
             
             checkoutButton.addEventListener('click', async () => {
                 try {
-                    // Disable button and show loading state
+                    // Show loading state
                     checkoutButton.disabled = true;
-                    checkoutButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-                    
-                    // Get all product IDs and quantities from the cart
-                    const cartItems = [];
-                    document.querySelectorAll('tr[data-product-id]').forEach(row => {
-                        const productId = row.getAttribute('data-product-id');
-                        const quantity = row.querySelector('input[type="number"]')?.value || 1;
-                        cartItems.push({
-                            id: productId,
-                            quantity: parseInt(quantity)
-                        });
-                    });
-                    
-                    if (cartItems.length === 0) {
-                        throw new Error('Your cart is empty');
-                    }
+                    checkoutButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
                     
                     // Create checkout session
                     const response = await fetch('/create-checkout-session', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'  // Helps identify AJAX requests
                         },
-                        body: JSON.stringify({
-                            items: cartItems
-                        }),
+                        credentials: 'same-origin'  // Include cookies for session
                     });
                     
-                    const session = await response.json();
+                    const data = await response.json();
                     
-                    if (session.error) {
-                        throw new Error(session.error);
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to create checkout session');
                     }
                     
-                    // Redirect to Stripe Checkout
-                    const result = await stripe.redirectToCheckout({
-                        sessionId: session.sessionId
+                    if (!data.id) {
+                        throw new Error('Invalid response from server');
+                    }
+                    
+                    // Initialize Stripe and redirect to checkout
+                    const stripe = Stripe('{{ stripe_public_key }}');
+                    const { error } = await stripe.redirectToCheckout({
+                        sessionId: data.id
                     });
                     
-                    if (result.error) {
-                        throw new Error(result.error.message);
+                    if (error) {
+                        throw error;
                     }
+                    
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error: ' + error.message);
+                    console.error('Checkout error:', error);
+                    alert(`Error: ${error.message || 'An error occurred while processing your order. Please try again.'}`);
+                    // Reset button state
                     checkoutButton.disabled = false;
-                    checkoutButton.innerHTML = '<i class="fas fa-credit-card me-2"></i>Buy Now';
+                    checkoutButton.innerHTML = '<i class="fas fa-credit-card me-2"></i>Proceed to Checkout';
                 }
             });
         </script>

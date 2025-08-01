@@ -59,36 +59,60 @@ def main():
 
 @app.route('/add_to_cart/<product_id>', methods=['POST'])
 def add_to_cart(product_id):
-    cart = session.get('cart', {})
-    cart[product_id] = cart.get(product_id, 0) + 1
-    session['cart'] = cart
-    product = db.products.find_one({'_id': product_id})
-    product_name = product.get('name', 'Item') if product else 'Item'
-    flash(f'{product_name} has been added to your cart!', 'success')
-    return redirect(request.referrer or url_for('main'))
+    try:
+        cart = session.get('cart', {})
+        
+        # First try to find the product with the exact ID (string match)
+        product = db.products.find_one({'_id': product_id})
+        
+        # If not found and it looks like a UUID, try with ObjectId as fallback
+        if not product and ObjectId.is_valid(product_id):
+            product = db.products.find_one({'_id': ObjectId(product_id)})
+            
+        if not product:
+            flash('Product not found', 'error')
+            return redirect(request.referrer or url_for('main'))
+            
+        # Use the product's actual _id from the database as the cart key
+        cart_key = str(product['_id'])
+        cart[cart_key] = cart.get(cart_key, 0) + 1
+        session['cart'] = cart
+        session.modified = True  # Ensure the session is saved
+        
+        product_name = product.get('name', 'Item')
+        flash(f'{product_name} has been added to your cart!', 'success')
+        return redirect(request.referrer or url_for('main'))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding to cart: {str(e)}", exc_info=True)
+        flash('An error occurred while adding the item to your cart', 'error')
+        return redirect(request.referrer or url_for('main'))
 
 @app.route('/cart')
 def cart():
     cart = session.get('cart', {})
     products = []
     total = 0
+    
     for product_id, qty in cart.items():
         try:
-            # Try to convert to ObjectId if it's a valid ObjectId string
-            if isinstance(product_id, str) and ObjectId.is_valid(product_id):
+            # Try to find the product with the exact ID first
+            product = db.products.find_one({"_id": product_id})
+            
+            # If not found and it looks like an ObjectId, try that
+            if not product and ObjectId.is_valid(product_id):
                 product = db.products.find_one({"_id": ObjectId(product_id)})
-            else:
-                product = db.products.find_one({"_id": product_id})
                 
             if product:
-                # Convert ObjectId to string for template
+                # Ensure we use the string version of the ID for consistency
+                product = dict(product)  # Create a mutable copy
                 product['_id'] = str(product['_id'])
                 product['qty'] = qty
-                product['subtotal'] = float(product['price']) * qty
+                product['subtotal'] = float(product.get('price', 0)) * qty
                 total += product['subtotal']
                 products.append(product)
         except Exception as e:
-            print(f"Error loading product {product_id}: {e}")
+            app.logger.error(f"Error loading product {product_id}: {str(e)}", exc_info=True)
             continue
     
     # Get categories for the sidebar
@@ -105,24 +129,60 @@ def cart():
 
 @app.route('/remove_from_cart/<product_id>', methods=['POST'])
 def remove_from_cart(product_id):
-    cart = session.get('cart', {})
-    if product_id in cart:
-        del cart[product_id]
-        session['cart'] = cart
+    try:
+        cart = session.get('cart', {})
+        
+        # Find the matching key in the cart (handles both string and ObjectId formats)
+        cart_key = None
+        for key in cart.keys():
+            if key == product_id or str(key) == str(product_id):
+                cart_key = key
+                break
+                
+        if cart_key is not None:
+            del cart[cart_key]
+            session['cart'] = cart
+            flash('Item removed from cart', 'success')
+        else:
+            flash('Item not found in cart', 'error')
+            
+    except Exception as e:
+        app.logger.error(f"Error removing from cart: {str(e)}")
+        flash('An error occurred while removing the item from your cart', 'error')
+        
     return redirect(url_for('cart'))
 
 @app.route('/update_cart/<product_id>', methods=['POST'])
 def update_cart(product_id):
-    cart = session.get('cart', {})
     try:
-        qty = int(request.form['qty'])
-        if qty > 0:
-            cart[product_id] = qty
+        cart = session.get('cart', {})
+        
+        # Find the matching key in the cart (handles both string and ObjectId formats)
+        cart_key = None
+        for key in cart.keys():
+            if key == product_id or str(key) == str(product_id):
+                cart_key = key
+                break
+                
+        if cart_key is not None:
+            qty = int(request.form.get('qty', 1))
+            if qty > 0:
+                cart[cart_key] = qty
+                flash('Cart updated successfully', 'success')
+            else:
+                del cart[cart_key]  # Remove if qty is 0 or less
+                flash('Item removed from cart', 'success')
+                
+            session['cart'] = cart
         else:
-            cart.pop(product_id, None)  # Remove if qty is set to 0 or less
-        session['cart'] = cart
-    except (ValueError, KeyError):
-        pass  # Optionally flash an error message
+            flash('Item not found in cart', 'error')
+            
+    except ValueError:
+        flash('Invalid quantity', 'error')
+    except Exception as e:
+        app.logger.error(f"Error updating cart: {str(e)}")
+        flash('An error occurred while updating your cart', 'error')
+        
     return redirect(url_for('cart'))
 
 def allowed_file(filename):

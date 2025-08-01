@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, jsonify, request, redirect, url_fo
 from functools import wraps
 from bson import ObjectId
 from .order_models import Order
-from app import db
+from app import db, login_required
 import logging
 
 order_bp = Blueprint('order', __name__)
@@ -207,11 +207,17 @@ def order_detail(order_id):
             # Debug: Log before getting order
             current_app.logger.debug(f'About to call Order.get_order_by_id with order_id: {order_id}')
             
-            # Get order using the model method which handles formatting
+            # Get the raw order from the database
             order = db.orders.find_one({'_id': ObjectId(order_id)})
             
             # Debug: Log the raw order from database
             current_app.logger.debug(f'Raw order from DB: {order}')
+            
+            # Debug: Log the shipping address specifically
+            if 'shipping_address' in order:
+                current_app.logger.debug(f'Raw shipping address: {order["shipping_address"]}')
+            else:
+                current_app.logger.debug('No shipping_address found in order')
             
             if not order:
                 current_app.logger.warning(f'Order not found: {order_id}')
@@ -231,30 +237,35 @@ def order_detail(order_id):
                 'items': []
             }
             
-            # Format items
-            if 'items' in order and isinstance(order['items'], list):
+            # Format items if they exist
+            if 'items' in order and order['items'] is not None:
+                # Ensure items is a list
+                if not isinstance(order['items'], (list, tuple)):
+                    order['items'] = list(order['items']) if hasattr(order['items'], '__iter__') and not isinstance(order['items'], str) else []
+                
+                formatted_items = []
                 for item in order['items']:
                     if isinstance(item, dict):
                         formatted_item = {
                             'product_id': str(item.get('product_id', '')),
                             'name': item.get('name', 'Unknown Product'),
-                            'price': item.get('price', 0),
-                            'quantity': item.get('quantity', 1),
+                            'price': float(item.get('price', 0)),
+                            'quantity': int(item.get('quantity', 1)),
                             'image_url': item.get('image_url', '')
                         }
-                        formatted_order['items'].append(formatted_item)
+                        formatted_items.append(formatted_item)
+                
+                formatted_order['items'] = formatted_items
             
-            # Debug: Log the formatted order
+            # Log the formatted order for debugging
             current_app.logger.debug(f'Formatted order: {formatted_order}')
+            current_app.logger.debug(f'Order loaded - ID: {order_id}, Status: {formatted_order.get("status")}, Items: {len(formatted_order.get("items", []))}')
             
             # Check if user is authorized to view this order
             if str(formatted_order.get('user_id')) != str(user_id) and not is_admin:
                 current_app.logger.warning(f'Unauthorized access attempt to order {order_id} by user {user_id}')
                 flash('You are not authorized to view this order', 'danger')
                 return redirect(url_for('order.my_orders'))
-            
-            # Log order details for debugging (without sensitive info)
-            current_app.logger.debug(f'Order loaded - ID: {order_id}, Status: {formatted_order.get("status")}, Items: {len(formatted_order.get("items", []))}')
             
             return render_template('orders/order_detail.html', 
                                 order=formatted_order,
@@ -272,6 +283,39 @@ def order_detail(order_id):
         return redirect(url_for('dashboard'))
 
 # Admin routes
+@order_bp.route('/debug/order/<order_id>')
+@login_required
+def debug_order(order_id):
+    """Debug route to inspect order data"""
+    try:
+        from bson import ObjectId, json_util
+        import json
+        
+        # Get the raw order from the database
+        order = db.orders.find_one({'_id': ObjectId(order_id)})
+        if not order:
+            return jsonify({'error': 'Order not found'}), 404
+        
+        # Get the user's order to check permissions
+        user_id = session.get('user', {}).get('_id')
+        is_admin = session.get('user', {}).get('is_admin', False)
+        
+        # Check if user is authorized to view this order
+        if str(order.get('user_id')) != str(user_id) and not is_admin:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Convert the order to a dictionary and handle ObjectId serialization
+        order_dict = json.loads(json_util.dumps(order))
+        
+        return jsonify({
+            'success': True,
+            'order': order_dict,
+            'shipping_address_exists': 'shipping_address' in order,
+            'shipping_address': order.get('shipping_address', {})
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'type': type(e).__name__}), 500
+
 @order_bp.route('/admin/orders')
 @admin_required
 def admin_orders():

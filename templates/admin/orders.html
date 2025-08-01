@@ -26,8 +26,10 @@
                                 <th class="ps-3">Order ID</th>
                                 <th>Date</th>
                                 <th>Customer</th>
+                                <th>Shipping</th>
                                 <th class="text-center">Items</th>
                                 <th class="text-end">Total</th>
+                                <th class="text-center">Status</th>
                                 <th class="text-center">Actions</th>
                             </tr>
                         </thead>
@@ -46,8 +48,34 @@
                                     <div>{{ order.user_name }}</div>
                                     <small class="text-muted">{{ order.user_email }}</small>
                                 </td>
+                                <td>
+                                    {% if order.shipping_address %}
+                                        <div class="small">
+                                            <div>{{ order.shipping_address.get('name', '') }}</div>
+                                            <div class="text-muted">
+                                                {{ order.shipping_address.get('address', {}).get('city', '') }}, 
+                                                {{ order.shipping_address.get('address', {}).get('country', '')|upper }}
+                                            </div>
+                                            {% if order.shipping_address.get('phone') %}
+                                                <div class="text-muted">{{ order.shipping_address.phone }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">No shipping info</span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">{{ order.order_items|length }}</td>
                                 <td class="text-end fw-bold">${{ "%.2f"|format(order.total_amount/100) }}</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill 
+                                        {% if order.status == 'Delivered' %}bg-success
+                                        {% elif order.status in ['Canceled', 'Failed Delivery', 'Shipment Failed'] %}bg-danger
+                                        {% elif order.status == 'Shipped' %}bg-info
+                                        {% elif order.status == 'Processing' %}bg-primary
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
                                 <td class="text-center">
                                     <div class="btn-group">
                                         <a href="{{ url_for('order.order_detail', order_id=order._id) }}"

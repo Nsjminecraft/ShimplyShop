@@ -19,13 +19,54 @@ class Order:
     ]
 
     @staticmethod
-    def create_order(user_id, items, total_amount, shipping_address, payment_intent_id):
+    def create_order(user_id, items, total_amount, payment_intent_id, shipping_address=None, **kwargs):
         """
         Create a new order
+        
+        Args:
+            user_id: ID of the user placing the order
+            items: List of dicts with product_id, name, quantity, price
+            total_amount: Total amount of the order
+            payment_intent_id: Stripe payment intent ID
+            shipping_address: Dictionary containing shipping information
+            **kwargs: Additional fields
         """
+        # Initialize shipping address if not provided
+        if shipping_address is None:
+            shipping_address = {}
+            
+        # If shipping info is passed as individual fields in kwargs, use those
+        if not shipping_address and all(k in kwargs for k in ['shipping_name', 'shipping_line1', 'shipping_city']):
+            shipping_address = {
+                'name': kwargs.get('shipping_name', ''),
+                'phone': kwargs.get('shipping_phone', ''),
+                'email': kwargs.get('shipping_email', ''),
+                'address': {
+                    'line1': kwargs.get('shipping_line1', ''),
+                    'line2': kwargs.get('shipping_line2', ''),
+                    'city': kwargs.get('shipping_city', ''),
+                    'state': kwargs.get('shipping_state', ''),
+                    'postal_code': kwargs.get('shipping_postal_code', ''),
+                    'country': kwargs.get('shipping_country', '')
+                },
+                'shipping_method': 'Standard Shipping'
+            }
+            
+        # Ensure shipping_address has all required fields
+        if 'address' not in shipping_address:
+            shipping_address['address'] = {}
+        if 'name' not in shipping_address:
+            shipping_address['name'] = ''
+        if 'phone' not in shipping_address:
+            shipping_address['phone'] = ''
+        if 'email' not in shipping_address:
+            shipping_address['email'] = ''
+        if 'shipping_method' not in shipping_address:
+            shipping_address['shipping_method'] = 'Standard Shipping'
+        
         order = {
             'user_id': user_id,
-            'items': items,  # List of dicts with product_id, name, quantity, price
+            'items': items,
             'total_amount': total_amount,
             'shipping_address': shipping_address,
             'status': 'Order Placed',
@@ -34,6 +75,9 @@ class Order:
             'created_at': datetime.utcnow(),
             'updated_at': datetime.utcnow()
         }
+        
+        # Add any additional fields that were passed in kwargs
+        order.update(kwargs)
         
         result = db.orders.insert_one(order)
         return str(result.inserted_id)

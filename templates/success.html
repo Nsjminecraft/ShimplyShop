@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
                 <div class="card-body text-center">
                     <div class="checkmark-circle">
@@ -19,65 +19,85 @@
                     {% else %}
                         <div class="alert alert-success">
                             <p>Your order has been processed successfully.</p>
-                            {% if order_id %}
-                                <p class="mb-0">Order ID: {{ order_id }}</p>
+                            {% if order and order._id %}
+                                <p class="mb-0">Order #{{ order._id }}</p>
                             {% endif %}
                         </div>
                         
                         <div class="order-summary mt-4">
                             <h5 class="text-start mb-3">Order Summary</h5>
-                            {% if session and session.line_items and session.line_items.data %}
-                                <div class="table-responsive">
-                                    <table class="table table-bordered">
-                                        <thead class="table-light">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="text-end">Price</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if order and order.get('items') %}
+                                            {% for item in order.get('items', []) %}
                                             <tr>
-                                                <th>Item</th>
-                                                <th class="text-end">Price</th>
-                                                <th class="text-center">Qty</th>
-                                                <th class="text-end">Total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for item in session.line_items.data %}
-                                            <tr>
-                                                <td>{{ item.description }}</td>
-                                                <td class="text-end">${{ "%.2f"|format(item.amount_total / item.quantity) }}</td>
-                                                <td class="text-center">{{ item.quantity }}</td>
-                                                <td class="text-end">${{ "%.2f"|format(item.amount_total) }}</td>
+                                                <td>{{ item.get('name', 'Unknown Item') }}</td>
+                                                <td class="text-end">${{ "%.2f"|format(item.get('price', 0)) }}</td>
+                                                <td class="text-center">{{ item.get('quantity', 1) }}</td>
+                                                <td class="text-end">${{ "%.2f"|format(item.get('price', 0) * item.get('quantity', 1)) }}</td>
                                             </tr>
                                             {% endfor %}
                                             <tr class="table-light">
                                                 <td colspan="3" class="text-end fw-bold">Total:</td>
-                                                <td class="text-end fw-bold">${{ "%.2f"|format(session.amount_total) }}</td>
+                                                <td class="text-end fw-bold">${{ "%.2f"|format(order.get('total', 0)) }}</td>
                                             </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% else %}
-                                <div class="alert alert-info">
-                                    Order details will be available in your order history.
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mt-4">
-                            <p>We've sent a confirmation email to <strong>{{ session.customer_details.email if session and session.customer_details else 'your email' }}</strong>.</p>
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4" class="text-center">No items found in this order</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
                             
-                            <div class="d-flex justify-content-center gap-3 mt-4">
-                                <a href="{{ url_for('order.my_orders') }}" class="btn btn-primary">
-                                    View My Orders
-                                </a>
-                                <a href="{{ url_for('main') }}" class="btn btn-outline-secondary">
-                                    Continue Shopping
-                                </a>
+                            {% if order and order.get('shipping_info') %}
+                            <div class="mt-4 text-start">
+                                <h5>Shipping Information</h5>
+                                <p>
+                                    {{ order.get('shipping_info', {}).get('name', '') }}<br>
+                                    {% if order.get('shipping_info', {}).get('address') %}
+                                        {{ order.get('shipping_info', {}).get('address', {}).get('line1', '') }}<br>
+                                        {% if order.get('shipping_info', {}).get('address', {}).get('line2') %}
+                                            {{ order.get('shipping_info', {}).get('address', {}).get('line2') }}<br>
+                                        {% endif %}
+                                        {{ order.get('shipping_info', {}).get('address', {}).get('city', '') }}, 
+                                        {{ order.get('shipping_info', {}).get('address', {}).get('state', '') }} 
+                                        {{ order.get('shipping_info', {}).get('address', {}).get('postal_code', '') }}<br>
+                                        {{ order.get('shipping_info', {}).get('address', {}).get('country', '') }}
+                                    {% endif %}
+                                    {% if order.get('shipping_info', {}).get('phone') %}
+                                        <br>Phone: {{ order.get('shipping_info', {}).get('phone') }}
+                                    {% endif %}
+                                    {% if user_email %}
+                                        <br>Email: {{ user_email }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-4">
+                                <p>An email confirmation has been sent to your email address.</p>
+                                <div class="d-flex justify-content-center gap-3 mt-4">
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                                    </a>
+                                    <a href="{{ url_for('main') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     {% endif %}
                 </div>
-            </div>
-            
-            <div class="mt-4 text-muted text-center">
-                Questions about your order? Please check your order status or contact support.
             </div>
         </div>
     </div>
