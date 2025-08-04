@@ -6,9 +6,68 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <title>Simpleyshop</title>
 </head>
 <body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="mobile-header-left">
+            <a href="/main" class="mobile-logo">
+                <img src="/static/img/logo.png" alt="Commers Logo" class="logo">
+                <span>Commers</span>
+            </a>
+        </div>
+        <div class="mobile-header-right">
+            <a href="{{ url_for('cart') }}" class="mobile-cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count">0</span>
+            </a>
+            <button class="account-btn" aria-label="Account">
+                <i class="fas fa-user"></i>
+            </button>
+            <div class="account-dropdown">
+                {% if session.user %}
+                    <div class="account-header">
+                        <i class="fas fa-user-circle"></i>
+                        <div>
+                            <div class="account-name">{{ session.user.get('name', 'User') }}</div>
+                            <div class="account-email">{{ session.user.get('email', '') }}</div>
+                        </div>
+                    </div>
+                    <a href="/dashboard/" class="dropdown-item">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('order.my_orders') }}" class="dropdown-item">
+                        <i class="fas fa-box"></i>
+                        <span>My Orders</span>
+                    </a>
+                    {% if session.user and session.user.get('is_admin') %}
+                    <a href="{{ url_for('order.admin_orders') }}" class="dropdown-item">
+                        <i class="fas fa-list-alt"></i>
+                        <span>Admin Dashboard</span>
+                    </a>
+                    {% endif %}
+                    <a href="/user/signout" class="dropdown-item text-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sign Out</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="dropdown-item">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Sign In</span>
+                    </a>
+                    <a href="{{ url_for('signup_page') }}" class="dropdown-item">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Create Account</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Header -->
     <header class="main-header">
         <div class="header-left">
             <img src="/static/img/logo.png" alt="Commers Logo" class="logo">
@@ -61,6 +120,61 @@
     {% endblock %}
 
     <!-- <script src="{{ url_for('static', filename='js/jquery.js') }}"></script> -->
-    <!-- <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> -->
+    <!--    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.querySelector('.hamburger-btn');
+            const closeMenuBtn = document.querySelector('.close-menu-btn');
+            const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
+            const mobileNav = document.querySelector('.mobile-nav');
+            
+            // Open mobile menu
+            function openMenu() {
+                mobileNav.classList.add('active');
+                mobileMenuOverlay.style.display = 'block';
+                setTimeout(() => {
+                    mobileMenuOverlay.classList.add('active');
+                }, 10);
+                document.body.style.overflow = 'hidden';
+            }
+            
+            // Close mobile menu
+            function closeMenu() {
+                mobileNav.classList.remove('active');
+                mobileMenuOverlay.classList.remove('active');
+                setTimeout(() => {
+                    mobileMenuOverlay.style.display = 'none';
+                }, 300);
+                document.body.style.overflow = '';
+            }
+            
+            // Event listeners
+            if (hamburgerBtn) {
+                hamburgerBtn.addEventListener('click', openMenu);
+            }
+            
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', closeMenu);
+            }
+            
+            if (mobileMenuOverlay) {
+                mobileMenuOverlay.addEventListener('click', closeMenu);
+            }
+            
+            // Close menu when clicking on a nav link
+            const navLinks = document.querySelectorAll('.mobile-nav-links a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', closeMenu);
+            });
+            
+            // Close menu when pressing Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMenu();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -291,11 +291,13 @@ def success():
         
         if not order and checkout_session.payment_status == 'paid':
             # Create a new order
+            order_total = float(checkout_session.amount_total) / 100
             order = {
                 'user_id': str(session.get('user', {}).get('_id', '')),
                 'items': [],  # Initialize as empty list
-                'total': float(checkout_session.amount_total) / 100,
-                'status': 'completed',
+                'total': order_total,
+                'display_total': f'₹{order_total:.2f}',  # Formatted total for display
+                'status': 'Order Placed',
                 'payment_intent': checkout_session.payment_intent,
                 'created_at': datetime.utcnow(),
                 'shipping_info': {}
