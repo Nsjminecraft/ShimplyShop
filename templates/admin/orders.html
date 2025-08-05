@@ -45,8 +45,33 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div>{{ order.user_name }}</div>
-                                    <small class="text-muted">{{ order.user_email }}</small>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="bi bi-person-circle fs-5"></i>
+                                        </div>
+                                        <div>
+                                            {% if order.user_name and order.user_name != 'Guest' %}
+                                                <div class="fw-medium" title="User ID: {{ order.user_id }}">
+                                                    {{ order.user_name }}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <i class="bi bi-envelope me-1"></i>
+                                                    {% if order.user_email and order.user_email != 'No email' %}
+                                                        <a href="mailto:{{ order.user_email }}" class="text-muted text-decoration-none">
+                                                            {{ order.user_email }}
+                                                        </a>
+                                                    {% else %}
+                                                        No email
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <div class="fw-medium text-muted">Guest Checkout</div>
+                                                <div class="text-muted small">
+                                                    <i class="bi bi-info-circle me-1"></i>No account
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     {% if order.shipping_address %}
@@ -65,7 +90,18 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">{{ order.order_items|length }}</td>
-                                <td class="text-end fw-bold">${{ "%.2f"|format(order.total_amount/100) }}</td>
+                                <td class="text-end fw-bold">
+                                    {% set total = order.total_amount %}
+                                    {% if total is defined and total is not none %}
+                                        {% if total > 1000 %}
+                                            ${{ "%.2f"|format(total/100) }}
+                                        {% else %}
+                                            ${{ "%.2f"|format(total) }}
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">
                                     <form method="POST" action="{{ url_for('order.update_order_status') }}">
                                         <input type="hidden" name="order_id" value="{{ order._id }}">

@@ -340,6 +340,13 @@ def admin_orders():
                                 'image_url': item.get('image_url', '')
                             })
                 
+                # Get shipping info if available
+                shipping_info = order_data.get('shipping_info', {})
+                shipping_email = order_data.get('email')  # Try to get email directly from order
+                
+                if not shipping_email and isinstance(shipping_info, dict):
+                    shipping_email = shipping_info.get('email')
+                
                 # Create the formatted order dictionary
                 formatted_order = {
                     '_id': str(order_data.get('_id')),
@@ -348,7 +355,13 @@ def admin_orders():
                     'total_amount': order_data.get('total_amount', 0),
                     'created_at': order_data.get('created_at'),
                     'tracking_number': order_data.get('tracking_number'),
-                    'order_items': formatted_items  # Use a different key to avoid conflicts
+                    'order_items': formatted_items,  # Use a different key to avoid conflicts
+                    'shipping_info': {
+                        'email': shipping_email,
+                        'name': shipping_info.get('name', ''),
+                        'phone': shipping_info.get('phone', '')
+                    },
+                    'email': shipping_email  # For backward compatibility
                 }
                 orders_list.append(formatted_order)
 
@@ -358,18 +371,29 @@ def admin_orders():
 
         # Get user data for all orders
         user_ids = [order['user_id'] for order in orders_list if order.get('user_id')]
+        current_app.logger.info(f'Found user IDs in orders: {user_ids}')
+        
         users = {}
         if user_ids:
-            user_cursor = db.users.find({
-                '_id': {'$in': [ObjectId(uid) for uid in user_ids if ObjectId.is_valid(uid)]}
-            })
+            # Convert string IDs to ObjectId for the query
+            user_object_ids = [ObjectId(uid) for uid in user_ids if ObjectId.is_valid(uid)]
+            current_app.logger.info(f'Valid user IDs for query: {user_object_ids}')
+            
+            user_cursor = db.users.find({'_id': {'$in': user_object_ids}})
             users = {str(user['_id']): user for user in user_cursor}
+            current_app.logger.info(f'Found {len(users)} users in database')
 
         # Add user info and format date for each order
         for order in orders_list:
-            user = users.get(order.get('user_id', ''), {})
+            user_id = order.get('user_id')
+            current_app.logger.info(f'Processing order {order.get("_id")} with user_id: {user_id}')
+            
+            user = users.get(str(user_id) if user_id else '', {})
+            current_app.logger.info(f'Found user data: {user}')
+            
             order['user_name'] = user.get('name', 'Guest')
             order['user_email'] = user.get('email', 'No email')
+            current_app.logger.info(f'Order {order.get("_id")} - Name: {order["user_name"]}, Email: {order["user_email"]}')
             
             if isinstance(order.get('created_at'), str):
                 try:
