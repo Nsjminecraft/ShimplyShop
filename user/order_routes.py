@@ -393,19 +393,37 @@ def admin_orders():
 @order_bp.route('/admin/order/update_status', methods=['POST'])
 @admin_required
 def update_order_status():
+    current_app.logger.info('Update status request received')
+    current_app.logger.info(f'Form data: {request.form}')
+    current_app.logger.info(f'Headers: {dict(request.headers)}')
+    
     order_id = request.form.get('order_id')
     status = request.form.get('status')
     tracking_number = request.form.get('tracking_number', '').strip() or None
     
     try:
         if not order_id or not status:
+            error_msg = f'Missing order_id or status. Got order_id: {order_id}, status: {status}'
+            current_app.logger.error(error_msg)
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': 'Missing order_id or status'}), 400
-            flash('Missing order ID or status', 'danger')
+                return jsonify({'success': False, 'message': error_msg}), 400
+            flash(error_msg, 'danger')
             return redirect(url_for('order.admin_orders'))
             
+        current_app.logger.info(f'Attempting to update order {order_id} to status {status}')
+        
         # Update the order status in the database
-        Order.update_order_status(order_id, status, tracking_number)
+        success = Order.update_order_status(order_id, status, tracking_number)
+        
+        if not success:
+            error_msg = f'Failed to update order {order_id}. Order not found or update failed.'
+            current_app.logger.error(error_msg)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': error_msg}), 404
+            flash(error_msg, 'danger')
+            return redirect(url_for('order.admin_orders'))
+            
+        current_app.logger.info(f'Successfully updated order {order_id} to status {status}')
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
@@ -424,7 +442,8 @@ def update_order_status():
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
                 'success': False,
-                'message': error_msg
+                'message': error_msg,
+                'error_type': str(type(e).__name__)
             }), 500
             
         flash(error_msg, 'danger')

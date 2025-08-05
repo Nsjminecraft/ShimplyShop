@@ -67,27 +67,18 @@
                                 <td class="text-center">{{ order.order_items|length }}</td>
                                 <td class="text-end fw-bold">${{ "%.2f"|format(order.total_amount/100) }}</td>
                                 <td class="text-center">
-                                    {% set status_colors = {
-                                        'Delivered': '#198754',
-                                        'Canceled': '#dc3545',
-                                        'Failed Delivery': '#dc3545',
-                                        'Shipment Failed': '#dc3545',
-                                        'Shipped': '#0dcaf0',
-                                        'Processing': '#0d6efd'
-                                    } %}
-                                    {% set bg_color = status_colors.get(order.status, '#6c757d') %}
-                                    <form class="status-update-form" data-order-id="{{ order._id }}">
-                                        <select name="status" class="form-select form-select-sm d-inline-block w-auto status-select" 
-                                                data-bg-color="{{ bg_color }}">
-                                            {% for value, label in status_choices %}
-                                                <option value="{{ value }}" 
-                                                    {% if order.status == value %}selected{% endif %}
-                                                    style="color: #000;">
-                                                    {{ label }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
+                                    <form method="POST" action="{{ url_for('order.update_order_status') }}">
                                         <input type="hidden" name="order_id" value="{{ order._id }}">
+                                        <div class="input-group input-group-sm" style="width: auto;">
+                                            <select name="status" class="form-select status-select" data-status="{{ order.status }}">
+                                                {% for value, label in status_choices %}
+                                                    <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-arrow-repeat"></i> Update
+                                            </button>
+                                        </div>
                                     </form>
                                 </td>
                                 <td class="text-center">
@@ -148,8 +139,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'Shipment Failed': '#dc3545',
         'Shipped': '#0dcaf0',
         'Processing': '#0d6efd',
+        'Order Processing': '#0d6efd',
         'Order Placed': '#6c757d',
-        'Order Confirmed': '#0d6efd'
+        'Order Confirmed': '#0dcaf0'
     };
 
     // Apply initial background colors to status selects
@@ -158,15 +150,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const bgColor = statusColors[status] || '#6c757d';
         select.style.backgroundColor = bgColor;
         select.style.color = '#fff';
-        select.style.borderColor = bgColor;
-        select.style.borderRadius = '4px';
+        select.style.border = 'none';
+        select.style.borderRadius = '0.25rem';
         select.style.padding = '0.25rem 0.5rem';
-        select.style.fontSize = '0.8rem';
         select.style.fontWeight = '500';
-        select.style.cursor = 'pointer';
+        select.style.minWidth = '150px';
         return bgColor;
     }
-
+    
+    // Initialize all select elements with their proper colors
+    document.querySelectorAll('.status-select').forEach(select => {
+        // Set initial color based on data-status attribute
+        const status = select.getAttribute('data-status');
+        if (status) {
+            select.value = status;
+        }
+        updateSelectColor(select);
+        
+        // Update color when selection changes
+        select.addEventListener('change', function() {
+            updateSelectColor(this);
+        });
+    });
+    
+    // Make table rows clickable, but exclude form elements and buttons
+    const rows = document.querySelectorAll('.clickable-row');
+    rows.forEach(row => {
+        row.addEventListener('click', (event) => {
+            // Prevent navigation if the click is on a button, link, or form element
+            if (event.target.closest('a, button, .btn-group, select, .form-select, .btn, form, input')) {
+                return;
+            }
+            const href = row.dataset.href;
+            if (href) {
+                window.location.href = href;
+            }
+        });
+    });
+    
+    // Show flash messages if they exist
+    const flashMessages = [];
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                flashMessages.push({category: '{{ category }}', message: '{{ message }}'});
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
     // Function to show alert messages
     function showAlert(type, message) {
         // Remove any existing alerts
@@ -190,138 +221,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
     
-    // Initialize all select elements
-    document.querySelectorAll('.status-select').forEach(select => {
-        updateSelectColor(select);
-    });
-    
-    // Make table rows clickable
-    const rows = document.querySelectorAll('.clickable-row');
-    rows.forEach(row => {
-        row.addEventListener('click', (event) => {
-            // Prevent navigation if the click is on a button, link, or inside the button group
-            if (event.target.closest('a, button, .btn-group, select, .form-select, .btn')) {
-                return;
-            }
-            window.location.href = row.dataset.href;
-        });
-    });
-
-    // Handle status update form submissions
-    document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', function() {
-            const form = this.closest('form');
-            const orderId = form.querySelector('input[name="order_id"]').value;
-            const status = this.value;
-            
-            // Store the current value in case we need to revert
-            const previousStatus = this.value;
-            const originalHTML = this.outerHTML;
-            
-            // Show loading state
-            this.outerHTML = `
-                <div class="d-flex align-items-center">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    <span>Saving...</span>
-                </div>
-            `;
-            
-            // Send the update request
-            fetch('/admin/order/update_status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: new URLSearchParams({
-                    'order_id': orderId,
-                    'status': status
-                })
-            })
-            .then(async response => {
-                const data = await response.json().catch(() => ({}));
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to update status');
-                }
-                return data;
-            })
-            .then(data => {
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to update status');
-                }
-
-                // Update the select's style based on the new status
-                const newSelect = document.createElement('select');
-                newSelect.name = 'status';
-                newSelect.className = 'form-select form-select-sm d-inline-block w-auto status-select';
-                newSelect.style.cssText = `
-                    background-color: ${
-                        status === 'Delivered' ? '#198754' :
-                        ['Canceled', 'Failed Delivery', 'Shipment Failed'].includes(status) ? '#dc3545' :
-                        status === 'Shipped' ? '#0dcaf0' :
-                        status === 'Processing' || status === 'Order Processing' ? '#0d6efd' :
-                        status === 'Order Confirmed' ? '#0dcaf0' : '#6c757d'
-                    };
-                    color: white;
-                    border: none;
-                    font-weight: 500;
-                    padding: 0.25rem 0.5rem;
-                `;
-                
-                // Copy options from the original select
-                newSelect.innerHTML = select.innerHTML;
-                newSelect.value = status;
-                
-                // Replace the spinner with the updated select
-                const spinnerContainer = form.querySelector('.spinner-border')?.parentElement;
-                if (spinnerContainer) {
-                    spinnerContainer.replaceWith(newSelect);
-                    // Re-initialize the select
-                    updateSelectColor(newSelect);
-                }
-                
-                // Show success message
-                showAlert('success', 'Order status updated successfully!');
-                
-                // Re-attach event listener
-                newSelect.addEventListener('change', arguments.callee);
-            })
-            .catch(error => {
-                console.error('Error updating status:', error);
-                showAlert('danger', error.message || 'Failed to update order status');
-                // Restore the original select
-                const spinnerContainer = form.querySelector('.spinner-border')?.parentElement;
-                if (spinnerContainer) {
-                    spinnerContainer.outerHTML = originalHTML;
-                    // Re-initialize the select
-                    const restoredSelect = form.querySelector('.status-select');
-                    if (restoredSelect) {
-                        updateSelectColor(restoredSelect);
-                        restoredSelect.value = previousStatus;
-                        // Re-attach event listener
-                        restoredSelect.addEventListener('change', arguments.callee);
-                    }
-                }
-                select.outerHTML = originalHTML;
-                
-                // Show error message
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
-                alert.style.zIndex = '1100';
-                alert.innerHTML = `
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    ${error.message || 'Failed to update status. Please try again.'}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                document.body.appendChild(alert);
-                
-                // Remove alert after 5 seconds
-                setTimeout(() => {
-                    alert.classList.remove('show');
-                    setTimeout(() => alert.remove(), 150);
-                }, 5000);
-            });
-        });
+    // Display any flash messages
+    flashMessages.forEach(msg => {
+        showAlert(msg.category, msg.message);
     });
 });
 </script>
