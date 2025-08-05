@@ -41,7 +41,7 @@
                                         0 items
                                     {% endif %}
                                 </td>
-                                <td>${{ "%.2f"|format(order.total_amount/100) if order.total_amount is defined else '0.00' }}</td>
+                                <td>₹{{ order.total if order.total is defined else '0' }}</td>
                                 <td>
                                     {% if order.status %}
                                         <span class="badge 

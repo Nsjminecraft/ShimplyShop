@@ -229,7 +229,7 @@ def order_detail(order_id):
                 '_id': str(order.get('_id')),
                 'user_id': str(order.get('user_id')),
                 'status': order.get('status', 'Pending'),
-                'total_amount': order.get('total_amount', 0),
+                'total_amount': order.get('total', 0),  # Changed from total_amount to total
                 'tracking_number': order.get('tracking_number'),
                 'payment_intent_id': order.get('payment_intent_id'),
                 'shipping_address': order.get('shipping_address', {}),
@@ -378,9 +378,12 @@ def admin_orders():
                 except (ValueError, AttributeError):
                     pass
         
+        # Format status choices as (value, label) pairs
+        status_choices = [(status, status) for status in Order.STATUS_CHOICES]
+        
         return render_template('admin/orders.html', 
                             orders=orders_list, 
-                            status_choices=Order.STATUS_CHOICES)
+                            status_choices=status_choices)
 
     except Exception as e:
         current_app.logger.error(f'Error in admin_orders: {str(e)}', exc_info=True)
@@ -395,9 +398,34 @@ def update_order_status():
     tracking_number = request.form.get('tracking_number', '').strip() or None
     
     try:
+        if not order_id or not status:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Missing order_id or status'}), 400
+            flash('Missing order ID or status', 'danger')
+            return redirect(url_for('order.admin_orders'))
+            
+        # Update the order status in the database
         Order.update_order_status(order_id, status, tracking_number)
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'message': 'Order status updated successfully',
+                'status': status
+            })
+            
         flash('Order status updated successfully', 'success')
+        return redirect(url_for('order.admin_orders'))
+        
     except Exception as e:
-        flash(f'Error updating order status: {str(e)}', 'danger')
-    
-    return redirect(url_for('order.admin_orders'))
+        error_msg = f'Error updating order status: {str(e)}'
+        current_app.logger.error(error_msg, exc_info=True)
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': False,
+                'message': error_msg
+            }), 500
+            
+        flash(error_msg, 'danger')
+        return redirect(url_for('order.admin_orders'))

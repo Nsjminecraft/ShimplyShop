@@ -260,19 +260,38 @@ class Order:
         """
         Update order status (for admin)
         """
-        if status not in Order.STATUS_CHOICES:
-            raise ValueError("Invalid status")
-            
-        update_data = {
-            'status': status,
-            'updated_at': datetime.utcnow()
-        }
+        from flask import current_app
         
-        if tracking_number:
-            update_data['tracking_number'] = tracking_number
+        try:
+            if status not in Order.STATUS_CHOICES:
+                raise ValueError(f"Invalid status: {status}. Must be one of {Order.STATUS_CHOICES}")
+                
+            # Convert order_id to ObjectId if it's a string
+            if isinstance(order_id, str):
+                if not ObjectId.is_valid(order_id):
+                    raise ValueError(f"Invalid order_id format: {order_id}")
+                order_id = ObjectId(order_id)
+                
+            update_data = {
+                'status': status,
+                'updated_at': datetime.utcnow()
+            }
             
-        db.orders.update_one(
-            {'_id': ObjectId(order_id)},
-            {'$set': update_data}
-        )
-        return True
+            if tracking_number:
+                update_data['tracking_number'] = tracking_number
+                
+            result = db.orders.update_one(
+                {'_id': order_id},
+                {'$set': update_data}
+            )
+            
+            if result.matched_count == 0:
+                current_app.logger.warning(f"No order found with id: {order_id}")
+                return False
+                
+            current_app.logger.info(f"Updated order {order_id} status to {status}")
+            return True
+            
+        except Exception as e:
+            current_app.logger.error(f"Error updating order status: {str(e)}", exc_info=True)
+            raise

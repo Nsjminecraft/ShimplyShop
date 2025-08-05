@@ -10,186 +10,91 @@
             </a>
         </div>
     {% else %}
-        <div class="card shadow-sm">
+        <div class="card shadow-sm mb-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h2 class="h4 mb-0">Order Details</h2>
-                <span class="badge rounded-pill 
-                    {% if order.status == 'Delivered' %}text-bg-success
-                    {% elif order.status in ['Canceled', 'Failed Delivery', 'Shipment Failed'] %}text-bg-danger
-                    {% elif order.status == 'Shipped' %}text-bg-info
-                    {% elif order.status == 'Processing' %}text-bg-primary
-                    {% else %}text-bg-secondary{% endif %}">
-                    {{ order.status }}
+                <h2 class="h4 mb-0">Order #{{ order._id }}</h2>
+                <span class="badge bg-{{ 'success' if order.status == 'completed' else 'warning' }}">
+                    {{ order.status|title }}
                 </span>
             </div>
             <div class="card-body">
-                <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <h5 class="card-title">Order Information</h5>
-                        <p class="card-text mb-1">
-                            <strong>Order ID:</strong> <code class="small">#{{ order._id|default('N/A') }}</code>
-                        </p>
-                        <p class="card-text mb-1">
-                            <strong>Date:</strong> 
-                            {% if order.created_at and order.created_at is not string %}
-                                {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                            {% else %}
-                                {{ order.created_at|default('N/A') }}
-                            {% endif %}
-                        </p>
-                        {% if order.tracking_number %}
-                            <p class="card-text mb-1"><strong>Tracking:</strong> {{ order.tracking_number }}</p>
+                <!-- Order Date -->
+                <div class="mb-4">
+                    <p class="mb-1">
+                        <strong>Order Date:</strong> 
+                        {% if order.created_at and order.created_at is not string %}
+                            {{ order.created_at.strftime('%B %d, %Y') }}
+                        {% else %}
+                            {{ order.created_at|default('N/A') }}
                         {% endif %}
-                    </div>
+                    </p>
+                    {% if order.tracking_number %}
+                        <p class="mb-0"><strong>Tracking Number:</strong> {{ order.tracking_number }}</p>
+                    {% endif %}
                 </div>
-                
-                <div class="row">
-                    <!-- Order Items -->
-                    <div class="col-lg-8 pe-lg-4">
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Order Items</h5>
-                            </div>
-                            <div class="card-body p-0">
-                                {% set order_items = order.get('items', []) %}
-                                {% if order_items is iterable and order_items is not string %}
-                                    {% for item in order_items %}
-                                        {% if item is mapping %}
-                                            <div class="card mb-3">
-                                                <div class="row g-0">
-                                                    <div class="col-md-3">
-                                                        <img src="{{ item.get('image_url', '') or url_for('static', filename='img/placeholder.png') }}" 
-                                                            class="img-fluid rounded-start" 
-                                                            alt="{{ item.get('name', 'Product image') }}"
-                                                            style="width: 100%; height: 120px; object-fit: cover;">
-                                                    </div>
-                                                    <div class="col-md-9">
-                                                        <div class="card-body">
-                                                            <div class="d-flex justify-content-between align-items-start">
-                                                                <div>
-                                                                    <h5 class="card-title mb-1">{{ item.get('name', 'Unnamed Product') }}</h5>
-                                                                    <small class="text-muted d-block mb-2">SKU: {{ item.get('product_id', 'N/A') }}</small>
-                                                                </div>
-                                                                <div class="text-end">
-                                                                    <span class="text-muted small">{{ item.get('quantity', 1) }} × ${{ "%.2f"|format(item.get('price', 0)/100) }}</span>
-                                                                    <div class="fw-bold">${{ "%.2f"|format((item.get('price', 0) * item.get('quantity', 1))/100) }}</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-center p-4">
-                                        <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
-                                        <p class="text-muted mt-2 mb-0">No items found in this order.</p>
+
+                <!-- Order Items -->
+                <h5 class="mb-3">Order Items</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.get('items', []) %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.get('image_url', url_for('static', filename='img/placeholder.png')) }}" 
+                                             class="img-thumbnail me-3" 
+                                             style="width: 64px; height: 64px; object-fit: cover;"
+                                             alt="{{ item.get('name', 'Product') }}">
+                                        <div>
+                                            <h6 class="mb-0">{{ item.get('name', 'Unnamed Product') }}</h6>
+                                            <small class="text-muted">SKU: {{ item.get('product_id', 'N/A') }}</small>
+                                        </div>
                                     </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
+                                </td>
+                                <td>₹{{ item.get('price', 0) }}</td>
+                                <td>{{ item.get('quantity', 1) }}</td>
+                                <td class="text-end">₹{{ item.get('price', 0) * item.get('quantity', 1) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2 mb-0">No items found in this order.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-                    <!-- Order Summary & Shipping -->
-                    <div class="col-lg-4">
-                        <!-- Order Summary -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Order Summary</h5>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item d-flex justify-content-between px-0">
-                                        <span>Subtotal</span>
-                                        <span>${{ "%.2f"|format((order.total_amount|default(0))/100) }}</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between px-0">
-                                        <span>Shipping</span>
-                                        <span>${{ "%.2f"|format((order.shipping_cost|default(0))/100) }}</span>
-                                    </li>
-                                    {% if order.tax_amount is defined and order.tax_amount > 0 %}
-                                    <li class="list-group-item d-flex justify-content-between px-0">
-                                        <span>Tax</span>
-                                        <span>${{ "%.2f"|format(order.tax_amount/100) }}</span>
-                                    </li>
-                                    {% endif %}
-                                    <li class="list-group-item d-flex justify-content-between px-0 bg-light">
-                                        <strong class="h5 mb-0">Total</strong>
-                                        <strong class="h5 mb-0">${{ "%.2f"|format((order.total_amount|default(0))/100) }}</strong>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <!-- Shipping Information -->
+                <!-- Order Summary -->
+                <div class="row mt-4">
+                    <div class="col-md-6 offset-md-6">
                         <div class="card">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Shipping Information</h5>
-                                {% if order.tracking_number %}
-                                    <a href="#" class="btn btn-sm btn-outline-primary">Track Package</a>
-                                {% endif %}
-                            </div>
                             <div class="card-body">
-                                {% if order.shipping_name or order.shipping_line1 or order.shipping_city %}
-                                    <h6 class="fw-bold mb-2">Shipping Address</h6>
-                                    <div class="mb-3">
-                                        {# Name #}
-                                        {% if order.shipping_name %}
-                                            <div><i class="bi bi-person"></i> {{ order.shipping_name }}</div>
-                                        {% endif %}
-                                        
-                                        {# Address Lines #}
-                                        {% if order.shipping_line1 %}{{ order.shipping_line1 }}<br>{% endif %}
-                                        {% if order.shipping_line2 %}{{ order.shipping_line2 }}<br>{% endif %}
-                                        
-                                        {# City, State, ZIP #}
-                                        {% if order.shipping_city or order.shipping_state or order.shipping_postal_code %}
-                                            {% if order.shipping_city %}{{ order.shipping_city }}{% if order.shipping_state or order.shipping_postal_code %}, {% endif %}{% endif %}
-                                            {% if order.shipping_state %}{{ order.shipping_state }}{% if order.shipping_postal_code %} {% endif %}{% endif %}
-                                            {% if order.shipping_postal_code %}{{ order.shipping_postal_code }}{% endif %}
-                                            <br>
-                                        {% endif %}
-                                        
-                                        {# Country #}
-                                        {% if order.shipping_country %}
-                                            {{ order.shipping_country }}<br>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    {# Debug info - only show if debug is enabled #}
-                                    {% if config.DEBUG %}
-                                    <div class="alert alert-info small mt-3">
-                                        <strong>Debug - Order Data:</strong>
-                                        <pre class="mb-0">{{ order|tojson(indent=2) }}</pre>
-                                    </div>
-                                    {% endif %}
-                                {% else %}
-                                    <div class="alert alert-warning mb-0">
-                                        <i class="bi bi-exclamation-triangle"></i> No shipping information available for this order.
-                                    </div>
-                                {% endif %}
-                                
-                                {% if order.tracking_number %}
-                                    <div class="alert alert-info p-2 mt-3 mb-0">
-                                        <i class="bi bi-truck"></i> 
-                                        <strong>Tracking Number:</strong> {{ order.tracking_number }}
-                                    </div>
-                                {% endif %}
+                                <h5 class="card-title mb-3">Order Total</h5>
+                                <div class="d-flex justify-content-between fw-bold fs-4">
+                                    <span>Total:</span>
+                                    <span>₹{{ order.total_amount if order.total_amount is defined else '0' }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-light d-flex justify-content-between">
-                <a href="{{ url_for('order.my_orders') }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to My Orders
+            <div class="card-footer bg-light">
+                <a href="{{ url_for('order.my_orders') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Orders
                 </a>
-                {% if is_admin %}
-                    <a href="{{ url_for('order.admin_orders') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-grid-3x3-gap"></i> View All Orders
-                    </a>
-                {% endif %}
             </div>
         </div>
     {% endif %}

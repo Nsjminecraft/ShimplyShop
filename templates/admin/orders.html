@@ -67,14 +67,28 @@
                                 <td class="text-center">{{ order.order_items|length }}</td>
                                 <td class="text-end fw-bold">${{ "%.2f"|format(order.total_amount/100) }}</td>
                                 <td class="text-center">
-                                    <span class="badge rounded-pill 
-                                        {% if order.status == 'Delivered' %}bg-success
-                                        {% elif order.status in ['Canceled', 'Failed Delivery', 'Shipment Failed'] %}bg-danger
-                                        {% elif order.status == 'Shipped' %}bg-info
-                                        {% elif order.status == 'Processing' %}bg-primary
-                                        {% else %}bg-secondary{% endif %}">
-                                        {{ order.status }}
-                                    </span>
+                                    {% set status_colors = {
+                                        'Delivered': '#198754',
+                                        'Canceled': '#dc3545',
+                                        'Failed Delivery': '#dc3545',
+                                        'Shipment Failed': '#dc3545',
+                                        'Shipped': '#0dcaf0',
+                                        'Processing': '#0d6efd'
+                                    } %}
+                                    {% set bg_color = status_colors.get(order.status, '#6c757d') %}
+                                    <form class="status-update-form" data-order-id="{{ order._id }}">
+                                        <select name="status" class="form-select form-select-sm d-inline-block w-auto status-select" 
+                                                data-bg-color="{{ bg_color }}">
+                                            {% for value, label in status_choices %}
+                                                <option value="{{ value }}" 
+                                                    {% if order.status == value %}selected{% endif %}
+                                                    style="color: #000;">
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="hidden" name="order_id" value="{{ order._id }}">
+                                    </form>
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group">
@@ -108,67 +122,207 @@
 
 {% endblock %}
 
+{% block styles %}
+<style>
+    .status-select {
+        color: white;
+        border: none;
+        font-weight: 500;
+        padding: 0.25rem 0.5rem;
+        transition: background-color 0.3s ease;
+    }
+    .status-select option {
+        color: #000;
+    }
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Status colors mapping
+    const statusColors = {
+        'Delivered': '#198754',
+        'Canceled': '#dc3545',
+        'Failed Delivery': '#dc3545',
+        'Shipment Failed': '#dc3545',
+        'Shipped': '#0dcaf0',
+        'Processing': '#0d6efd',
+        'Order Placed': '#6c757d',
+        'Order Confirmed': '#0d6efd'
+    };
+
+    // Apply initial background colors to status selects
+    function updateSelectColor(select) {
+        const status = select.value;
+        const bgColor = statusColors[status] || '#6c757d';
+        select.style.backgroundColor = bgColor;
+        select.style.color = '#fff';
+        select.style.borderColor = bgColor;
+        select.style.borderRadius = '4px';
+        select.style.padding = '0.25rem 0.5rem';
+        select.style.fontSize = '0.8rem';
+        select.style.fontWeight = '500';
+        select.style.cursor = 'pointer';
+        return bgColor;
+    }
+
+    // Function to show alert messages
+    function showAlert(type, message) {
+        // Remove any existing alerts
+        document.querySelectorAll('.global-alert').forEach(alert => alert.remove());
+        
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3 global-alert`;
+        alert.style.zIndex = '1100';
+        alert.style.maxWidth = '350px';
+        alert.innerHTML = `
+            <i class="bi ${type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        // Remove alert after 5 seconds
+        setTimeout(() => {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 150);
+        }, 5000);
+    }
+    
+    // Initialize all select elements
+    document.querySelectorAll('.status-select').forEach(select => {
+        updateSelectColor(select);
+    });
+    
     // Make table rows clickable
     const rows = document.querySelectorAll('.clickable-row');
     rows.forEach(row => {
         row.addEventListener('click', (event) => {
             // Prevent navigation if the click is on a button, link, or inside the button group
-            if (event.target.closest('a, button, .btn-group')) {
+            if (event.target.closest('a, button, .btn-group, select, .form-select, .btn')) {
                 return;
             }
             window.location.href = row.dataset.href;
         });
     });
 
-    var updateStatusModal = document.getElementById('updateStatusModal');
-    if (updateStatusModal) {
-        updateStatusModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var orderId = button.getAttribute('data-order-id');
-            var currentStatus = button.getAttribute('data-current-status');
-            var trackingNumber = button.getAttribute('data-tracking');
+    // Handle status update form submissions
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const form = this.closest('form');
+            const orderId = form.querySelector('input[name="order_id"]').value;
+            const status = this.value;
             
-            // Update the modal's content
-            var modalTitle = updateStatusModal.querySelector('.modal-title');
-            var modalOrderId = updateStatusModal.querySelector('#modalOrderId');
-            modalTitle.textContent = 'Update Order Status';
-            modalOrderId.textContent = '#' + orderId.substring(0, 8);
+            // Store the current value in case we need to revert
+            const previousStatus = this.value;
+            const originalHTML = this.outerHTML;
             
-            var orderIdInput = updateStatusModal.querySelector('#orderIdInput');
-            var statusSelect = updateStatusModal.querySelector('#statusSelect');
-            var trackingInput = updateStatusModal.querySelector('#trackingNumber');
+            // Show loading state
+            this.outerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    <span>Saving...</span>
+                </div>
+            `;
             
-            orderIdInput.value = orderId;
-            statusSelect.value = currentStatus;
-            trackingInput.value = trackingNumber || '';
-        });
-    }
-});
+            // Send the update request
+            fetch('/admin/order/update_status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    'order_id': orderId,
+                    'status': status
+                })
+            })
+            .then(async response => {
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to update status');
+                }
+                return data;
+            })
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to update status');
+                }
 
-function updateOrderStatus(orderId, status, trackingNumber) {
-  if (confirm("Are you sure you want to update the order status to " + status + "?")) {
-    fetch('/admin/order/update_status', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'order_id=' + orderId + '&status=' + status + '&tracking_number=' + trackingNumber
-    })
-    .then(response => {
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        alert('Failed to update order status');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('An error occurred while updating order status');
+                // Update the select's style based on the new status
+                const newSelect = document.createElement('select');
+                newSelect.name = 'status';
+                newSelect.className = 'form-select form-select-sm d-inline-block w-auto status-select';
+                newSelect.style.cssText = `
+                    background-color: ${
+                        status === 'Delivered' ? '#198754' :
+                        ['Canceled', 'Failed Delivery', 'Shipment Failed'].includes(status) ? '#dc3545' :
+                        status === 'Shipped' ? '#0dcaf0' :
+                        status === 'Processing' || status === 'Order Processing' ? '#0d6efd' :
+                        status === 'Order Confirmed' ? '#0dcaf0' : '#6c757d'
+                    };
+                    color: white;
+                    border: none;
+                    font-weight: 500;
+                    padding: 0.25rem 0.5rem;
+                `;
+                
+                // Copy options from the original select
+                newSelect.innerHTML = select.innerHTML;
+                newSelect.value = status;
+                
+                // Replace the spinner with the updated select
+                const spinnerContainer = form.querySelector('.spinner-border')?.parentElement;
+                if (spinnerContainer) {
+                    spinnerContainer.replaceWith(newSelect);
+                    // Re-initialize the select
+                    updateSelectColor(newSelect);
+                }
+                
+                // Show success message
+                showAlert('success', 'Order status updated successfully!');
+                
+                // Re-attach event listener
+                newSelect.addEventListener('change', arguments.callee);
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                showAlert('danger', error.message || 'Failed to update order status');
+                // Restore the original select
+                const spinnerContainer = form.querySelector('.spinner-border')?.parentElement;
+                if (spinnerContainer) {
+                    spinnerContainer.outerHTML = originalHTML;
+                    // Re-initialize the select
+                    const restoredSelect = form.querySelector('.status-select');
+                    if (restoredSelect) {
+                        updateSelectColor(restoredSelect);
+                        restoredSelect.value = previousStatus;
+                        // Re-attach event listener
+                        restoredSelect.addEventListener('change', arguments.callee);
+                    }
+                }
+                select.outerHTML = originalHTML;
+                
+                // Show error message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+                alert.style.zIndex = '1100';
+                alert.innerHTML = `
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${error.message || 'Failed to update status. Please try again.'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.body.appendChild(alert);
+                
+                // Remove alert after 5 seconds
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 150);
+                }, 5000);
+            });
+        });
     });
-  }
-}
-</script
+});
+</script>
 {% endblock %}
