@@ -398,10 +398,10 @@ def admin_dashboard():
                 {"name": {"$regex": q, "$options": "i"}},
                 {"description": {"$regex": q, "$options": "i"}}
             ]
-        }))
+        }).sort("name", 1))  # Sort by name in ascending order
     else:
-        products = list(db.products.find())
-    categories = list(db.categories.find()) if hasattr(db, 'categories') else []
+        products = list(db.products.find().sort("name", 1))  # Sort by name in ascending order
+    categories = list(db.categories.find().sort("name", 1)) if hasattr(db, 'categories') else []  # Also sort categories alphabetically
     return render_template('admin_dashboard.html', products=products, categories=categories)
 
 @app.route('/session/')
