@@ -50,26 +50,43 @@
                                             <i class="bi bi-person-circle fs-5"></i>
                                         </div>
                                         <div>
-                                            {% if order.user_name and order.user_name != 'Guest' %}
-                                                <div class="fw-medium" title="User ID: {{ order.user_id }}">
-                                                    {{ order.user_name }}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    <i class="bi bi-envelope me-1"></i>
-                                                    {% if order.user_email and order.user_email != 'No email' %}
-                                                        <a href="mailto:{{ order.user_email }}" class="text-muted text-decoration-none">
-                                                            {{ order.user_email }}
-                                                        </a>
-                                                    {% else %}
-                                                        No email
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <div class="fw-medium text-muted">Guest Checkout</div>
-                                                <div class="text-muted small">
-                                                    <i class="bi bi-info-circle me-1"></i>No account
-                                                </div>
-                                            {% endif %}
+                                            {% set display_name = order.user_name if order.user_name and order.user_name != 'Guest' else 'Guest Checkout' %}
+                                            {% set is_guest = not order.user_name or order.user_name == 'Guest' %}
+                                            
+                                            <div class="fw-medium {% if is_guest %}text-muted{% endif %}" 
+                                                 title="{% if not is_guest %}User ID: {{ order.user_id }}{% else %}Guest Checkout{% endif %}">
+                                                {{ display_name }}
+                                            </div>
+                                            
+                                            <div class="text-muted small">
+                                                <i class="bi bi-envelope me-1"></i>
+                                                {% set order_email = order.checkout_email or order.email or order.user_email %}
+                                                {% set shipping_email = order.shipping_info.email if order.shipping_info and order.shipping_info.email else '' %}
+                                                {% set display_email = order_email if order_email and order_email != 'No email' else shipping_email %}
+                                                
+                                                {% if display_email %}
+                                                    <a href="mailto:{{ display_email }}" class="text-muted text-decoration-none" 
+                                                       title="{% if order_email and shipping_email and order_email != shipping_email %}
+                                                           Original: {{ order_email }}
+                                                       {% endif %}">
+                                                        {{ display_email }}
+                                                        {% if is_guest %}
+                                                            <span class="badge bg-secondary ms-1" style="font-size: 0.6rem;">Guest</span>
+                                                        {% endif %}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-muted">No email provided</span>
+                                                {% endif %}
+                                                
+                                                {% if order.stripe_customer_id %}
+                                                    <div class="mt-1">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-credit-card"></i> 
+                                                            <span class="font-monospace small">{{ order.stripe_customer_id|truncate(8, True, '') }}</span>
+                                                        </small>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>

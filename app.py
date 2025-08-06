@@ -59,9 +59,11 @@ def login_required(f):
 # Routes
 from user import routes
 from user.order_routes import order_bp as order_blueprint
+from debug_orders import debug_bp
 
 # Register blueprints
 app.register_blueprint(order_blueprint, url_prefix='/user')
+app.register_blueprint(debug_bp, url_prefix='/debug')
 
 # Add is_admin to user session
 @app.context_processor
@@ -281,10 +283,29 @@ def success():
             expand=['line_items', 'payment_intent']
         )
         
-        # Get user email from session or checkout session
-        user_email = session.get('user', {}).get('email')
-        if not user_email and hasattr(checkout_session, 'customer_details') and hasattr(checkout_session.customer_details, 'email'):
-            user_email = checkout_session.customer_details.email
+        # Get user email from multiple possible sources with fallbacks
+        user_email = (
+            # First try to get from the user's session
+            session.get('user', {}).get('email') or 
+            # Then try from Stripe customer details if available
+            (getattr(checkout_session, 'customer_details', {}).get('email') if hasattr(checkout_session, 'customer_details') else None) or
+            # Then try from customer_email if available (for guest checkouts)
+            getattr(checkout_session, 'customer_email', '') or
+            # Finally, try to get from the payment intent's customer
+            (stripe.Customer.retrieve(checkout_session.customer).email if hasattr(checkout_session, 'customer') and checkout_session.customer else '') or
+            ''
+        )
+        
+        # Log the email source for debugging
+        app.logger.info(f"User email from checkout session: {user_email}")
+        app.logger.info(f"Checkout session customer_details: {getattr(checkout_session, 'customer_details', 'N/A')}")
+        app.logger.info(f"Checkout session customer_email: {getattr(checkout_session, 'customer_email', 'N/A')}")
+        if hasattr(checkout_session, 'customer') and checkout_session.customer:
+            try:
+                customer = stripe.Customer.retrieve(checkout_session.customer)
+                app.logger.info(f"Customer object: {customer}")
+            except Exception as e:
+                app.logger.error(f"Error fetching customer: {str(e)}")
         
         # Get the order from the database or create a new one
         order = db.orders.find_one({'payment_intent': checkout_session.payment_intent})
@@ -292,21 +313,50 @@ def success():
         if not order and checkout_session.payment_status == 'paid':
             # Create a new order
             order_total = float(checkout_session.amount_total) / 100
+            user_id = str(session.get('user', {}).get('_id', ''))
+            
+            # Get user data if available
+            user_data = {}
+            if user_id:
+                try:
+                    # First try to find user by _id if it's a valid ObjectId
+                    if ObjectId.is_valid(user_id):
+                        user = db.users.find_one({'_id': ObjectId(user_id)})
+                    else:
+                        # If not a valid ObjectId, try to find by string _id
+                        user = db.users.find_one({'_id': user_id})
+                        
+                    if user:
+                        user_data = {
+                            'user_id': str(user.get('_id', user_id)),
+                            'user_name': user.get('name', ''),
+                            'user_email': user.get('email', '')
+                        }
+                except Exception as e:
+                    app.logger.error(f"Error fetching user data: {str(e)}")
+                    user_data = {'user_id': str(user_id)}
+            
             order = {
-                'user_id': str(session.get('user', {}).get('_id', '')),
+                'user_id': user_id,
                 'items': [],  # Initialize as empty list
                 'total': order_total,
                 'display_total': f'₹{order_total:.2f}',  # Formatted total for display
                 'status': 'Order Placed',
                 'payment_intent': checkout_session.payment_intent,
                 'created_at': datetime.utcnow(),
-                'shipping_info': {}
+                'shipping_info': {},
+                'email': user_email,  # Store the email directly on the order
+                'user_name': user_data.get('user_name', ''),
+                'user_email': user_email or user_data.get('user_email', ''),  # Use the most reliable email
+                'checkout_email': user_email,  # Store the email from checkout separately
+                'stripe_customer_id': getattr(checkout_session, 'customer', None),  # Store Stripe customer ID for reference
             }
             
             # Add shipping info if available
             if hasattr(checkout_session, 'shipping') and checkout_session.shipping:
                 order['shipping_info'] = {
                     'name': getattr(checkout_session.shipping, 'name', ''),
+                    'email': user_email,  # Add the email to shipping info
                     'address': {
                         'line1': getattr(getattr(checkout_session.shipping, 'address', {}), 'line1', ''),
                         'line2': getattr(getattr(checkout_session.shipping, 'address', {}), 'line2', ''),
@@ -317,6 +367,9 @@ def success():
                     },
                     'phone': getattr(checkout_session.customer_details, 'phone', '') if hasattr(checkout_session, 'customer_details') else ''
                 }
+            # Also add email to the root of the order for easier access
+            if user_email:
+                order['email'] = user_email
             
             # Add items to the order
             try:
