@@ -3,7 +3,23 @@
 <div class="main-wrapper" style="padding: 15px 0 0 15px; margin: 0; max-width: none; width: 99vw; box-sizing: border-box;">
     <h1 class="center" style="margin: 0 0 15px 0; padding: 0 10px; font-size: 1.8em;">Admin Dashboard</h1>
     
-    <div class="card-wrapper" style="align-items: flex-start; height: calc(100vh - 120px); width: 99%; margin: 0; gap: 15px; padding: 0 10px 10px 0; box-sizing: border-box;">
+    <!-- Inventory Summary Cards -->
+    <div class="card-wrapper" style="display: flex; justify-content: space-between; gap: 15px; margin-bottom: 15px; padding: 0 10px 0 0;">
+        <div class="card" style="flex: 1; padding: 15px; background: #4CAF50; color: white; border-radius: 8px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1em; color: white;">Total Inventory Value</h3>
+            <p style="margin: 0; font-size: 1.5em; font-weight: bold;">${{ "%.2f"|format(total_inventory_value) }}</p>
+        </div>
+        <div class="card" style="flex: 1; padding: 15px; background: #2196F3; color: white; border-radius: 8px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1em; color: white;">Total Products</h3>
+            <p style="margin: 0; font-size: 1.5em; font-weight: bold;">{{ product_count }}</p>
+        </div>
+        <div class="card" style="flex: 1; padding: 15px; background: #FF9800; color: white; border-radius: 8px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1em; color: white;">Total Items in Stock</h3>
+            <p style="margin: 0; font-size: 1.5em; font-weight: bold;">{{ total_stock }}</p>
+        </div>
+    </div>
+
+    <div class="card-wrapper" style="align-items: flex-start; height: calc(100vh - 240px); width: 99%; margin: 0; gap: 15px; padding: 0 10px 10px 0; box-sizing: border-box;">
         <!-- Products Box -->
         <div class="card" style="flex:3; min-width:72%; height: 100%; display: flex; flex-direction: column; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin: 0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">

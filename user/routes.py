@@ -402,7 +402,20 @@ def admin_dashboard():
     else:
         products = list(db.products.find().sort("name", 1))  # Sort by name in ascending order
     categories = list(db.categories.find().sort("name", 1)) if hasattr(db, 'categories') else []  # Also sort categories alphabetically
-    return render_template('admin_dashboard.html', products=products, categories=categories)
+    
+    # Calculate total inventory value
+    total_inventory_value = sum(product.get('price', 0) * product.get('stock', 0) for product in products)
+    
+    # Get count of products and total stock
+    product_count = len(products)
+    total_stock = sum(product.get('stock', 0) for product in products)
+    
+    return render_template('admin_dashboard.html', 
+                         products=products, 
+                         categories=categories,
+                         total_inventory_value=total_inventory_value,
+                         product_count=product_count,
+                         total_stock=total_stock)
 
 @app.route('/session/')
 def show_session():

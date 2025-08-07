@@ -352,7 +352,7 @@ def admin_orders():
                     '_id': str(order_data.get('_id')),
                     'user_id': str(order_data.get('user_id', '')),
                     'status': order_data.get('status', 'Pending'),
-                    'total_amount': order_data.get('total_amount', 0),
+                    'total_amount': order_data.get('display_total', order_data.get('total_amount', 0)),
                     'created_at': order_data.get('created_at'),
                     'tracking_number': order_data.get('tracking_number'),
                     'order_items': formatted_items,  # Use a different key to avoid conflicts
@@ -361,7 +361,8 @@ def admin_orders():
                         'name': shipping_info.get('name', ''),
                         'phone': shipping_info.get('phone', '')
                     },
-                    'email': shipping_email  # For backward compatibility
+                    'email': shipping_email,  # For backward compatibility
+                    'display_total': order_data.get('display_total', '')
                 }
                 orders_list.append(formatted_order)
 
@@ -383,6 +384,29 @@ def admin_orders():
             users = {str(user['_id']): user for user in user_cursor}
             current_app.logger.info(f'Found {len(users)} users in database')
 
+        # Calculate total order value across all orders
+        total_order_value = 0.0
+        for order in orders_list:
+            try:
+                # First try to get the display_total (formatted string with currency symbol)
+                display_total = order.get('display_total', '')
+                if display_total:
+                    # Extract numeric value from display_total (e.g., '₹123.00' -> 123.0)
+                    import re
+                    numeric_value = re.sub(r'[^\d.]', '', display_total)
+                    if numeric_value:
+                        total_order_value += float(numeric_value)
+                        continue
+                
+                # Fallback to total_amount if display_total is not available
+                amount = order.get('total_amount')
+                if amount is not None:
+                    total_order_value += float(amount)
+            except (ValueError, TypeError) as e:
+                current_app.logger.warning(f"Invalid amount for order {order.get('_id')}: {e}")
+        
+        current_app.logger.info(f"Calculated total order value: {total_order_value:.2f} across {len(orders_list)} orders")
+        
         # Add user info and format date for each order
         for order in orders_list:
             user_id = order.get('user_id')
@@ -395,6 +419,16 @@ def admin_orders():
             order['user_email'] = user.get('email', 'No email')
             current_app.logger.info(f'Order {order.get("_id")} - Name: {order["user_name"]}, Email: {order["user_email"]}')
             
+            # Ensure total_amount is a float with 2 decimal places
+            if 'total_amount' in order and order['total_amount'] is not None:
+                try:
+                    order['total_amount'] = float(order['total_amount'])
+                except (ValueError, TypeError):
+                    order['total_amount'] = 0.0
+                    current_app.logger.warning(f"Could not convert total_amount to float for order {order.get('_id')}")
+            else:
+                order['total_amount'] = 0.0
+            
             if isinstance(order.get('created_at'), str):
                 try:
                     from datetime import datetime
@@ -406,8 +440,10 @@ def admin_orders():
         status_choices = [(status, status) for status in Order.STATUS_CHOICES]
         
         return render_template('admin/orders.html', 
-                            orders=orders_list, 
-                            status_choices=status_choices)
+                             orders=orders_list,
+                             order_count=len(orders_list),
+                             total_order_value=total_order_value,
+                             status_choices=status_choices)
 
     except Exception as e:
         current_app.logger.error(f'Error in admin_orders: {str(e)}', exc_info=True)

@@ -34,11 +34,12 @@
                                         N/A
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if order.items is defined and order.items is not none %}
-                                        {{ order.items|length if order.items is iterable else 0 }} item{% if order.items is iterable and order.items|length != 1 %}s{% endif %}
+                                <td class="text-center">
+                                    {% set items = order.get('items', []) or order.get('order_items', []) %}
+                                    {% if items is string %}
+                                        <span class="text-muted">0</span>
                                     {% else %}
-                                        0 items
+                                        {{ items|length }}
                                     {% endif %}
                                 </td>
                                 <td>₹{{ order.total if order.total is defined else '0' }}</td>
