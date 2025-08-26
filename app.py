@@ -18,17 +18,19 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')
 
 # Configure MongoDB
-app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/ecommerce')
+app.config['MONGO_URI'] = os.getenv('MONGO_URI')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
 
 # Initialize MongoDB
-mongo = PyMongo()
-mongo.init_app(app)
+mongo = PyMongo(app)
 
 # Initialize direct MongoDB client
 try:
-    client = pymongo.MongoClient(os.getenv('MONGO_URI', 'mongodb://localhost:27017/'))
-    db = client['ecommerce']
+    client = pymongo.MongoClient(os.getenv('MONGO_URI'))
+    # Test the connection
+    client.admin.command('ping')
+    print("Successfully connected to MongoDB Atlas!")
+    db = client['simplyshop']  # Using the database name from your connection string
     fs = GridFS(db)
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
@@ -42,8 +44,8 @@ stripe_public_key = os.getenv('STRIPE_PUBLIC_KEY')
 app.config['STRIPE_PUBLIC_KEY'] = stripe_public_key
 
 # Database
-client = pymongo.MongoClient('localhost', 27017)
-db = client.user_login_system
+#client = pymongo.MongoClient('localhost', 27017)
+#db = client.user_login_system
 
 #Decorators
 def login_required(f):
