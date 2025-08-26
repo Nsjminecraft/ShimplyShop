@@ -26,11 +26,16 @@ mongo = PyMongo(app)
 
 # Initialize direct MongoDB client
 try:
-    client = pymongo.MongoClient(os.getenv('MONGO_URI'))
+    client = pymongo.MongoClient(
+        os.getenv('MONGO_URI'),
+        tls=True,
+        retryWrites=True,
+        w='majority'
+    )
     # Test the connection
     client.admin.command('ping')
     print("Successfully connected to MongoDB Atlas!")
-    db = client['simplyshop']  # Using the database name from your connection string
+    db = client.get_database()  # This will use the database specified in the URI
     fs = GridFS(db)
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
